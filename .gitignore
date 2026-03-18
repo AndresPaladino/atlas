@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Claude worktrees (heavy, machine-specific)
+.claude/worktrees/
+
+# Editor
+.vscode/
+*.swp
+*.swo
