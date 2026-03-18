@@ -65,15 +65,20 @@ updated: 2026-03-18
 ## Conceptos
 
 ### Entiendo
-(se completa automáticamente en sesiones)
+- PCB: estructura, campos, y por qué se guardan los registros de CPU
+- Estados de un proceso y transiciones
+- Context switch entre procesos (secuencia completa)
+- Qué comparte un thread con los demás threads del mismo proceso (code, data, files) vs. qué es privado (registros, stack)
 
 ### Tengo dudas
-(se completa automáticamente en sesiones)
+- Context switch entre threads: la secuencia formal no fue escrita, solo conceptualizada
 
 ## Bloom actual
-(se completa a medida que se trabajan temas)
+- Procesos y PCB: Comprensión/Aplicación (Bloom 2–3)
+- Threads: Comprensión (Bloom 2); falta práctica de aplicación en ejercicios de planificación
 
 ## Sesiones con Claude
 | Fecha | Ejercicios / temas trabajados | Resultado |
 |---|---|---|
 | (se llena automático al cierre de cada sesión) | | |
+| 2026-03-18 | Ej 1(a)(b)(c): estados de proceso, PCB, registros en PCB. Ej 2(a): context switch procesos y threads (conceptual) | Correcto con una iteración en 1c; 2a procesos completo, threads conceptualizado sin formalizar |
