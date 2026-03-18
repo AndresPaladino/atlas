@@ -6,6 +6,9 @@
 # Claude worktrees (heavy, machine-specific)
 .claude/worktrees/
 
+# Local Claude settings (contain absolute paths)
+.claude/settings.local.json
+
 # Editor
 .vscode/
 *.swp

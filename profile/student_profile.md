@@ -1,14 +1,13 @@
 ---
-updated: 2026-03-18
+updated: YYYY-MM-DD
 program: "Ingeniería - Udelar"
-carreer: "Comunication Systems Engineering"
+carreer: "Your career name here"
 ---
 
 # Perfil
 
 ## Materias activas
-- Cálculo Vectorial → subjects/calculo-vectorial/index.md
-- Física 1 → subjects/fisica1/index.md
+- [Nombre Materia] → subjects/[nombre-materia]/index.md
 
 ## Preferencias
 - Socrático puro en prácticos: nunca dar solución directa

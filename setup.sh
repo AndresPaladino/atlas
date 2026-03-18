@@ -9,15 +9,18 @@ SETTINGS_FILE="$ATLAS_PATH/.claude/settings.local.json"
 
 echo "🗂  Atlas path: $ATLAS_PATH"
 
-# ── 1. Update hardcoded paths in .claude/settings.local.json ─────────────────
-if [ -f "$SETTINGS_FILE" ]; then
-  echo "⚙️  Updating .claude/settings.local.json with local path..."
-  # Replace any absolute path that looks like a home directory Atlas install
-  sed -i.bak "s|/Users/[^/]*/[^\"]*Atlas|$ATLAS_PATH|g" "$SETTINGS_FILE"
-  rm -f "$SETTINGS_FILE.bak"
-  echo "   ✓ Paths updated"
+# ── 1. Create .claude/settings.local.json from example ───────────────────────
+SETTINGS_EXAMPLE="$ATLAS_PATH/.claude/settings.local.json.example"
+if [ ! -f "$SETTINGS_FILE" ]; then
+  if [ -f "$SETTINGS_EXAMPLE" ]; then
+    echo "⚙️  Creating .claude/settings.local.json from example..."
+    cp "$SETTINGS_EXAMPLE" "$SETTINGS_FILE"
+    echo "   ✓ Created"
+  else
+    echo "   ⚠️  settings.local.json.example not found, skipping"
+  fi
 else
-  echo "   ⚠️  settings.local.json not found, skipping path update"
+  echo "   ✓ .claude/settings.local.json already exists, skipping"
 fi
 
 # ── 2. Create current month log directory ─────────────────────────────────────
