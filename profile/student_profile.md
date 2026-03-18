@@ -1,13 +1,15 @@
 ---
-updated: YYYY-MM-DD
-program: "Ingeniería - Udelar"
-carreer: "Your career name here"
+updated: 2026-03-18
+program: "Ing. Sistemas de Comunicación - Udelar"
 ---
 
 # Perfil
 
 ## Materias activas
-- [Nombre Materia] → subjects/[nombre-materia]/index.md
+- Física 1 → subjects/fisica1/index.md
+- Cálculo Vectorial → subjects/calculo-vectorial/index.md
+- Sistemas Operativos → subjects/sistemas-operativos/index.md
+- Teoría de Lenguajes → subjects/teoria-lenguajes/index.md
 
 ## Preferencias
 - Socrático puro en prácticos: nunca dar solución directa
