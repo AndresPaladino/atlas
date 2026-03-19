@@ -43,12 +43,14 @@ updated: 2026-03-18
 - Métodos alternativos cuando la hessiana no decide (definición, restricción a curvas, Taylor orden superior)
 
 ### Tengo dudas
-(se completa automáticamente en sesiones)
+- Fórmula del jacobiano de φ: deducción por regla de la cadena
 
 ## Bloom actual
 Extremos relativos R²: **2** (comprende herramientas y cuándo aplicar cada una)
+Función implícita: **2** (comprende enunciado, hipótesis, y caso escalar vs. vectorial)
 
 ## Sesiones con Claude
 | Fecha | Ejercicios / temas trabajados | Resultado |
 |---|---|---|
 | 2026-03-18 | Criterio hessiana indeciso: análisis por definición, restricción a curvas, Taylor orden superior | Entendido — distingue cuándo falla H y qué alternativa usar |
+| 2026-03-18 | TFI: enunciado general (n+m), hipótesis, fórmula Dφ, geometría | Comprende condición ∂F/∂y≠0, casos escalar y vectorial, geometría del teorema |
