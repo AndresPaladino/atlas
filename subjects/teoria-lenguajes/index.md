@@ -39,15 +39,20 @@ updated: 2026-03-18
 ## Conceptos
 
 ### Entiendo
-(se completa automáticamente en sesiones)
+- Análisis de Kleene: planteo de ecuaciones desde transiciones salientes
+- Lema de Arden (versión Kleene): X = rX | s ⟹ X = r*.s
+- ε en estados finales, omisión del estado pozo
+- Simplificación de ER con factorización (ej: b | aa*b = a*b)
+- Notación estricta de ER: no usar + (usar r.r* en su lugar)
 
 ### Tengo dudas
-(se completa automáticamente en sesiones)
+- M4 del Ej3 (pendiente)
 
 ## Bloom actual
-(se completa a medida que se trabajan temas)
+Aplicación — resuelve sistemas de ecuaciones de Kleene en autómatas de hasta 4 estados con múltiples estados finales.
 
 ## Sesiones con Claude
 | Fecha | Ejercicios / temas trabajados | Resultado |
 |---|---|---|
 | (se llena automático al cierre de cada sesión) | | |
+| 2026-03-26 | Ej3 Práctico 3: Análisis de Kleene — M1, M2, M3 resueltos | M4 pendiente |
