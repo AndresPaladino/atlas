@@ -53,7 +53,7 @@ Campos extra por tipo:
 - **`theorem`**: `statement_form: "if A and B then C"` — esqueleto lógico.
 - **`method`**: `when_to_use: "..."`, `fails_when: "..."` — selección del método.
 - **`example`**: `illustrates: ["[[concept-or-theorem]]"]`, `difficulty: 1|2|3`, `session_ref: "subjects/<materia>/index.md#<fecha>"`.
-- **`source`**: `source_kind: lecture|book|paper|notes`, `path: "raw/lectures/.../foo.pdf"`, `pages: "12-34"`, `covers_concepts: [[...]]`, `covers_theorems: [[...]]`, `covers_methods: [[...]]`.
+- **`source`**: `source_kind: lecture|book|paper|notes`, `path: "raw/foo.pdf"`, `pages: "12-34"`, `covers_concepts: [[...]]`, `covers_theorems: [[...]]`, `covers_methods: [[...]]`.
 - **`comparison`**: `compares: ["[[A]]", "[[B]]"]`.
 - **`area`**: `tag_prefix: "math"` — prefijo de tag que captura sus miembros.
 

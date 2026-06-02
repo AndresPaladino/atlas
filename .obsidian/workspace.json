@@ -1,0 +1,218 @@
+{
+  "main": {
+    "id": "bcd38c818ab0a3b2",
+    "type": "split",
+    "children": [
+      {
+        "id": "f04f81c8e880a368",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "5a49cb6c7947f781",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "275138114ccc380b",
+    "type": "split",
+    "children": [
+      {
+        "id": "f3de73ffb2f35186",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "9356a530cbe3feb6",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "9c285dad14a2c2be",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "295036a6a4d80f74",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "9851278d3b4d7d4d",
+    "type": "split",
+    "children": [
+      {
+        "id": "43d46191bddb8542",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "8cefb4b0c66239df",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "a1108686f6a778f6",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "7d8441decb34ca3c",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "73d631005ff06cdc",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "a8c12336537ffe8e",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "9356a530cbe3feb6",
+  "lastOpenFiles": [
+    "wiki/methods/normal-vector-parametric-surface.md",
+    "wiki/theorems/greens-theorem.md",
+    "wiki/sources/gonzalez-cvec-2023.md",
+    "raw/NotasCursoCVec2023.pdf",
+    "wiki/examples/cycloid-parametrization.md",
+    "wiki/README.md",
+    "apostol-vol2-ch13.md",
+    "wiki/concepts/jacobian.md",
+    "wiki/theorems/arden-lemma.md",
+    "wiki/theorems/implicit-function-theorem.md",
+    "wiki/methods/kleene-analysis.md",
+    "wiki/methods/hessian-criterion.md",
+    "wiki/concepts/thread.md",
+    "wiki/concepts/regular-expression.md",
+    "wiki/concepts/process-states.md",
+    "wiki/concepts/finite-automaton.md",
+    "wiki/concepts/process-control-block.md",
+    "wiki/concepts/curve-parametrization.md",
+    "wiki/concepts/context-switch.md",
+    "wiki/concepts/critical-point.md",
+    "wiki/areas/signals.md",
+    "wiki/areas/ml.md",
+    "wiki/areas/computing.md",
+    "wiki/areas/math.md",
+    "wiki/areas/engineering-physics.md",
+    "wiki/theorems",
+    "wiki/sources",
+    "wiki/methods",
+    "wiki/index.md",
+    "wiki/log.md",
+    "wiki/examples",
+    "wiki/comparisons",
+    "wiki/concepts",
+    "wiki/areas",
+    "wiki",
+    "schema"
+  ]
+}

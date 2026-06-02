@@ -23,6 +23,15 @@ SORT bloom DESC, file.name ASC
 - [[critical-point]]
 - [[curve-parametrization]]
 - [[jacobian]]
+- [[arc-length]]
+- [[line-integral]]
+- [[gradient-field]]
+- [[parametric-surface]]
+- [[surface-integral]]
+- [[curl]]
+- [[divergence]]
+- [[irrotational-field]]
+- [[solenoidal-field]]
 - [[process-control-block]]
 - [[process-states]]
 - [[context-switch]]
@@ -42,6 +51,9 @@ SORT bloom DESC, file.name ASC
 
 ### Fallback manual
 - [[implicit-function-theorem]]
+- [[greens-theorem]]
+- [[stokes-theorem]]
+- [[gauss-theorem]]
 - [[arden-lemma]]
 
 ---
@@ -57,6 +69,7 @@ SORT bloom DESC, file.name ASC
 ### Fallback manual
 - [[hessian-criterion]]
 - [[kleene-analysis]]
+- [[normal-vector-parametric-surface]]
 
 ---
 
@@ -95,7 +108,7 @@ SORT file.mtime DESC
 ```
 
 ### Fallback manual
-(ninguna ingerida todavía)
+- [[gonzalez-cvec-2023]]
 
 ---
 

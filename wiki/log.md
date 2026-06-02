@@ -11,6 +11,26 @@ El log es **concept-bound**: registra qué pasó al grafo de conocimiento. El re
 
 ---
 
+## [2026-06-02] query | versor normal a superficie paramétrica
+
+- Página creada: [[normal-vector-parametric-surface]]
+- Fuentes citadas: [[gonzalez-cvec-2023]]
+
+---
+
+## [2026-06-02] ingest | NotasCursoCVec2023.pdf
+
+- Fuente: [[gonzalez-cvec-2023]] (`raw/NotasCursoCVec2023.pdf`)
+- Scope: Capítulo 2 (§2.1–§2.9, pp. 37–113)
+- Páginas wiki creadas:
+  - [[arc-length]], [[line-integral]], [[gradient-field]], [[parametric-surface]], [[surface-integral]]
+  - [[curl]], [[divergence]], [[irrotational-field]], [[solenoidal-field]]
+  - [[greens-theorem]], [[stokes-theorem]], [[gauss-theorem]]
+- Páginas wiki actualizadas: [[curve-parametrization]] (sources +1, unlocks actualizado)
+- Aristas nuevas: [[arc-length]] requires [[curve-parametrization]]; [[line-integral]] requires [[arc-length]]; [[gradient-field]] requires [[line-integral]]; [[greens-theorem]] requires [[line-integral]], [[gradient-field]]; [[parametric-surface]] requires [[curve-parametrization]], [[jacobian]]; [[surface-integral]] requires [[parametric-surface]]; [[stokes-theorem]] requires [[surface-integral]], [[curl]], [[greens-theorem]]; [[gauss-theorem]] requires [[surface-integral]], [[divergence]]; [[curl]] unlocks [[irrotational-field]], [[stokes-theorem]]; [[divergence]] unlocks [[solenoidal-field]], [[gauss-theorem]]
+
+---
+
 ## [2026-06-02] bootstrap | Wiki inicial
 
 - Creación de la estructura `wiki/` (concepts, theorems, methods, examples, comparisons, sources, areas).
