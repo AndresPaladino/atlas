@@ -56,3 +56,20 @@ Aplicación — resuelve sistemas de ecuaciones de Kleene en autómatas de hasta
 |---|---|---|
 | (se llena automático al cierre de cada sesión) | | |
 | 2026-03-26 | Ej3 Práctico 3: Análisis de Kleene — M1, M2, M3 resueltos | M4 pendiente |
+
+## Conceptos wiki
+
+```dataview
+TABLE bloom, areas, type
+FROM "wiki/concepts" OR "wiki/theorems" OR "wiki/methods" OR "wiki/examples"
+WHERE contains(seen_in_subjects, regexreplace(this.file.folder, ".*/", ""))
+SORT bloom DESC, file.name ASC
+```
+
+### Fallback manual
+- [[arden-lemma]] (bloom 3, theorem)
+- [[kleene-analysis]] (bloom 3, method)
+- [[regular-expression]] (bloom 3)
+- [[finite-automaton]] (bloom 2)
+
+> La verdad ejecutable del Bloom vive en el frontmatter de cada página wiki — la sección "Bloom actual" de arriba es referencia humana.

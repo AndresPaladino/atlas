@@ -13,3 +13,12 @@
 .vscode/
 *.swp
 *.swo
+
+# Raw sources — fuentes binarias / pesadas, no van al repo
+raw/**/*.pdf
+raw/**/*.epub
+raw/**/*.mp4
+raw/**/*.mov
+raw/**/*.png
+raw/**/*.jpg
+raw/**/*.jpeg

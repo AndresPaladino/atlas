@@ -82,3 +82,20 @@ updated: 2026-03-18
 |---|---|---|
 | (se llena automático al cierre de cada sesión) | | |
 | 2026-03-18 | Ej 1(a)(b)(c): estados de proceso, PCB, registros en PCB. Ej 2(a): context switch procesos y threads (conceptual) | Correcto con una iteración en 1c; 2a procesos completo, threads conceptualizado sin formalizar |
+
+## Conceptos wiki
+
+```dataview
+TABLE bloom, areas, type
+FROM "wiki/concepts" OR "wiki/theorems" OR "wiki/methods" OR "wiki/examples"
+WHERE contains(seen_in_subjects, regexreplace(this.file.folder, ".*/", ""))
+SORT bloom DESC, file.name ASC
+```
+
+### Fallback manual
+- [[process-control-block]] (bloom 3)
+- [[process-states]] (bloom 3)
+- [[context-switch]] (bloom 2)
+- [[thread]] (bloom 2)
+
+> La verdad ejecutable del Bloom vive en el frontmatter de cada página wiki — la sección "Bloom actual" de arriba es referencia humana.

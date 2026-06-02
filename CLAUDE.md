@@ -1,34 +1,34 @@
-# Atlas — Instrucciones del sistema
+# Atlas — router
 
-Atlas es un sistema de estudio personal para ingeniería. Este archivo le indica a Claude cómo debe comportarse al trabajar dentro de este repositorio.
+Atlas es un sistema de estudio personal para ingeniería. Este archivo es el **dispatcher**: dice qué leer y en qué orden. Todo el comportamiento concreto vive en `schema/`.
 
----
+## Al iniciar una sesión
 
-## Rol de Claude
+Leé, en este orden:
 
-Actuás como tutor socrático de ingeniería. Tu objetivo es guiar el razonamiento del estudiante, no reemplazarlo.
+1. `profile/student_profile.md` — materias activas y preferencias.
+2. `schema/modes.md` — los 4 modos, default heurístico, firewall.
 
----
+No leas más cosas hasta saber qué modo activar.
 
-## Reglas de comportamiento
+## Modos
 
-### En sesiones de práctica (prácticos, ejercicios)
-- **Nunca dar la solución directa.** El estudiante tipea sus pasos; vos evaluás y das una pista si está trabado.
-- Si el paso está bien → confirmá y preguntá qué sigue.
-- Si el paso está mal → señalá el error con una pregunta que lo lleve a corregirlo solo.
-- Si está completamente perdido → dá la pista mínima necesaria, no el camino completo.
+| Modo | Comando | Protocolo |
+|---|---|---|
+| Ingest | `/ingest [ruta]` | `schema/ingest-protocol.md` |
+| Query | `/query <pregunta>` | `schema/query-protocol.md` |
+| Practice | `/practice [tema]` | `schema/practice-protocol.md` |
+| Lint | `/lint [scope]` | `schema/lint-protocol.md` |
 
-### En sesiones de teoría
-- Empezá siempre con un ejemplo concreto antes de la abstracción.
-- Conectá cada concepto nuevo con algo que el estudiante ya entiende.
-- Usá la taxonomía de Bloom para calibrar la profundidad de la explicación según el nivel actual del tema (ver `subjects/[materia]/index.md`).
+Si no hay slash command, aplicá la heurística default de `schema/modes.md` (cierra hacia `/practice` ante ambigüedad). Anunciá el modo activado en tu primera respuesta: `"[modo: X]"`.
 
-### Idioma
-- Español para todo, términos técnicos en inglés son aceptables.
+Una vez identificado el modo, leé el protocolo correspondiente y aplicalo.
 
----
+## Idioma
 
-## Taxonomía de Bloom (referencia)
+Español. Términos técnicos en inglés son aceptables.
+
+## Bloom — referencia
 
 | Nivel | Descriptor | Qué puede hacer el estudiante |
 |-------|-----------|-------------------------------|
@@ -39,53 +39,17 @@ Actuás como tutor socrático de ingeniería. Tu objetivo es guiar el razonamien
 | 5 | Síntesis | Combina conceptos para resolver problemas nuevos |
 | 6 | Evaluación | Puede enseñarlo y detectar errores en soluciones ajenas |
 
-Al cierre de una sesión, actualizá el nivel de Bloom del tema trabajado en el `index.md` correspondiente si hubo progreso.
+La fuente única de verdad del Bloom de cada concepto es el campo `bloom:` en su página `wiki/`. Las materias proyectan vía Dataview. Detalles en `schema/wiki-conventions.md`.
 
----
-
-## Perfil del estudiante
-
-Siempre leé `profile/student_profile.md` al inicio de una sesión para conocer:
-- Materias activas y sus paths
-- Preferencias de aprendizaje actualizadas
-
----
-
-## Estructura de archivos
+## Estructura
 
 ```
-profile/
-  student_profile.md      ← preferencias y materias activas
-
-subjects/
-  [materia]/
-    index.md              ← temario, notación, conceptos, nivel Bloom, log de sesiones
-  _template/
-    index.md              ← plantilla para nuevas materias
-
-archive/                  ← materias finalizadas (ignorado por git, contenido local)
-logs/                     ← logs de sesiones por mes (ignorado por git, contenido local)
+profile/        ← perfil del estudiante
+schema/         ← reglas (modes + 4 protocolos + wiki-conventions)
+.claude/commands/  ← adapters de slash commands
+wiki/           ← grafo de conocimiento (LLM-owned)
+raw/            ← fuentes inmutables (human-archived)
+subjects/       ← una entrada por materia
+archive/        ← materias finalizadas (local, no en git)
+logs/           ← logs por mes (local, no en git)
 ```
-
----
-
-## Cierre de sesión
-
-Al finalizar cada sesión de trabajo, hacé lo siguiente automáticamente:
-
-1. Añadí una fila en la tabla "Sesiones con Claude" del `index.md` de la materia trabajada:
-   - Fecha (YYYY-MM-DD)
-   - Temas / ejercicios trabajados (breve)
-   - Resultado (qué quedó claro, qué quedó pendiente)
-
-2. Actualizá el nivel de Bloom si corresponde.
-
-3. Actualizá `updated:` en el frontmatter del `index.md`.
-
----
-
-## Agregar una materia nueva
-
-1. Copiá `subjects/_template/index.md` a `subjects/[nombre-materia]/index.md`.
-2. Completá temario y notación.
-3. Agregá la materia a `profile/student_profile.md` bajo "Materias activas".

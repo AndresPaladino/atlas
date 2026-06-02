@@ -100,3 +100,17 @@ Cinemática 2D / proyectiles: **1** (inicial)
 | Fecha | Ejercicios / temas trabajados | Resultado |
 |---|---|---|
 | (se llena automático al cierre de cada sesión) | | |
+
+## Conceptos wiki
+
+```dataview
+TABLE bloom, areas, type
+FROM "wiki/concepts" OR "wiki/theorems" OR "wiki/methods" OR "wiki/examples"
+WHERE contains(seen_in_subjects, regexreplace(this.file.folder, ".*/", ""))
+SORT bloom DESC, file.name ASC
+```
+
+### Fallback manual
+(ninguna página wiki todavía — primer `/ingest` pendiente)
+
+> La verdad ejecutable del Bloom vive en el frontmatter de cada página wiki — la sección "Bloom actual" de arriba es referencia humana.

@@ -44,6 +44,7 @@ updated: 2026-03-18
 
 ### Tengo dudas
 - Fórmula del jacobiano de φ: deducción por regla de la cadena
+- Cicloide acortada y alargada (Ej 4.3 parte 2): pendiente
 
 ## Bloom actual
 Extremos relativos R²: **2** (comprende herramientas y cuándo aplicar cada una)
@@ -54,3 +55,23 @@ Función implícita: **2** (comprende enunciado, hipótesis, y caso escalar vs. 
 |---|---|---|
 | 2026-03-18 | Criterio hessiana indeciso: análisis por definición, restricción a curvas, Taylor orden superior | Entendido — distingue cuándo falla H y qué alternativa usar |
 | 2026-03-18 | TFI: enunciado general (n+m), hipótesis, fórmula Dφ, geometría | Comprende condición ∂F/∂y≠0, casos escalar y vectorial, geometría del teorema |
+| 2026-04-19 | Ej 4.3 p1: cicloide — parametrización, condición de rodadura, tangentes verticales/horizontales, cúspides | Parametrización deducida geométricamente; distingue cúspides (ambas derivadas nulas) de tangentes horizontales (solo y'=0) |
+
+## Conceptos wiki
+
+```dataview
+TABLE bloom, areas, type
+FROM "wiki/concepts" OR "wiki/theorems" OR "wiki/methods" OR "wiki/examples"
+WHERE contains(seen_in_subjects, regexreplace(this.file.folder, ".*/", ""))
+SORT bloom DESC, file.name ASC
+```
+
+### Fallback manual
+- [[critical-point]] (bloom 2)
+- [[curve-parametrization]] (bloom 2)
+- [[cycloid-parametrization]] (bloom 2, example)
+- [[hessian-criterion]] (bloom 2, method)
+- [[implicit-function-theorem]] (bloom 2, theorem)
+- [[jacobian]] (bloom 1)
+
+> La verdad ejecutable del Bloom vive en el frontmatter de cada página wiki — la sección "Bloom actual" de arriba es referencia humana.
