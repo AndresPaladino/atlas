@@ -7,6 +7,8 @@ updated: 2026-06-02
 
 Sesión Socrática estricta. El agente guía el razonamiento del estudiante sin filtrar la solución, ni desde su propio conocimiento ni desde el wiki.
 
+Formato de salida (matemática incluida): seguir `schema/output-conventions.md` — mate en `$…$` / `$$…$$`, nunca `\(…\)`.
+
 ---
 
 ## Reglas Socráticas (no negociables)

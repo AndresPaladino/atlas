@@ -22,6 +22,7 @@ Tomar una fuente cruda (PDF, notas, libro, paper) y poblar/actualizar el wiki co
 
 ## Paso 1 — Leer y mapear
 
+- **Preferir el markdown extraído.** Si existe `raw/<mismo-nombre>.md` (lo produce `atlas-local`, ver `local/`), leer **ese** archivo de texto en vez del PDF: trae el contenido con LaTeX y captions de figuras, y cuesta una fracción de los tokens. Solo si **no** existe el `.md`, hacer `Read` visual sobre el PDF (fallback fiel pero caro).
 - Leer la fuente completa (o pedir rango de páginas si es muy larga).
 - Construir un mapa interno: para cada sección o diapositiva, listar los conceptos / teoremas / métodos / ejemplos que aparecen.
 - No escribir nada todavía.
@@ -64,7 +65,8 @@ type: source
 title: "<título legible>"
 aliases: ["<variantes>"]
 source_kind: book | paper | notes | lecture
-path: "raw/<nombre-de-archivo>"   # ruta relativa al repo, sin subcarpetas
+path: "raw/<nombre-de-archivo>"   # ruta relativa al repo, sin subcarpetas (siempre el .pdf, fuente inmutable)
+extracted: "raw/<nombre-de-archivo>.md"  # opcional: markdown cacheado leído en el ingest (atlas-local)
 pages: "1-24"                     # rango cubierto, opcional
 areas: [math, signals]
 tags: [calculus/vector]
@@ -177,9 +179,11 @@ Activado con `/ingest --compile`. Escanea `raw/` en busca de archivos no registr
 
 ### Paso C1 — Detectar archivos nuevos
 
-1. Listar todos los archivos en `raw/` (extensiones `.pdf`, `.md`, `.txt`).
+1. Listar las fuentes en `raw/` (los **`.pdf`**, más `.txt`/`.md` que no sean extracciones de un PDF homónimo).
 2. Leer los frontmatters de todos los archivos bajo `wiki/sources/` y extraer el campo `path:` de cada uno.
-3. Construir la lista de **archivos no registrados**: archivos en `raw/` cuyo path no aparece en ningún `path:` de `wiki/sources/`.
+3. Construir la lista de **archivos no registrados**: fuentes en `raw/` cuyo path no aparece en ningún `path:` de `wiki/sources/`.
+4. Para cada fuente nueva, chequear si existe su `.md` cacheado (mismo nombre, extensión `.md`). Si **falta**, avisar y sugerir correr la extracción local antes de ingerir (no convertir el PDF desde Claude):
+   > "`<archivo>.pdf` no tiene markdown extraído. Corré `cd local && uv run atlas-local extract` (o `atlas-local extract raw/<archivo>.pdf`) y volvé a `/ingest --compile`. Si querés ingerirlo igual ahora, lo leo visualmente del PDF (más caro en tokens)."
 
 Si no hay archivos nuevos:
 > "No hay archivos nuevos en `raw/`. Tirá un PDF ahí y volvé a correr `/ingest --compile`."

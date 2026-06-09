@@ -7,6 +7,8 @@ updated: 2026-06-02
 
 Responder una pregunta del usuario consultando el wiki. Sintetizar con citas. Opcionalmente archivar la respuesta como página nueva para que la próxima query encuentre el resultado ya hecho.
 
+Formato de salida (matemática incluida): seguir `schema/output-conventions.md` — mate en `$…$` / `$$…$$`, nunca `\(…\)`.
+
 ---
 
 ## Apertura

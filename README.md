@@ -11,6 +11,8 @@ Atlas organiza el cursado por materia, guía las sesiones de práctica con méto
 Abrís este repositorio en Claude Code. El agente lee `CLAUDE.md` (router) y sabe cómo dispatcher: `CLAUDE.md` apunta a `schema/modes.md`, que define los 4 modos de operación.
 
 ```
+PDFs (raw/) ──[atlas-local, GPU local]──→ raw/*.md (LaTeX + captions)
+                                              │
 sources (raw/)  ──/ingest──→  wiki/  ──/query──→  respuesta con citas
                               ↑↓ Bloom
                               subjects/
@@ -19,6 +21,11 @@ sources (raw/)  ──/ingest──→  wiki/  ──/query──→  respuesta 
 
                            /lint  ──→  auditoría de consistencia
 ```
+
+> **Capa de extracción local** (`local/`): un CLI (`atlas-local`) convierte los
+> PDFs a markdown con LaTeX y captions de figuras usando la GPU disponible
+> (CUDA/MPS/CPU), *antes* del `/ingest`. Claude lee ese texto barato en vez de la
+> imagen de cada página → menos tokens, misma fidelidad. Ver `local/README.md`.
 
 ---
 

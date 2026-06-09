@@ -22,3 +22,8 @@ raw/**/*.mov
 raw/**/*.png
 raw/**/*.jpg
 raw/**/*.jpeg
+
+# Extracción local (atlas-local): el .md y el manifest SÍ se versionan (texto,
+# compartibles entre máquinas); las imágenes que extrae marker quedan locales.
+!raw/**/*.md
+!raw/.atlas-extract.json

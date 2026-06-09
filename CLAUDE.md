@@ -45,10 +45,11 @@ La fuente única de verdad del Bloom de cada concepto es el campo `bloom:` en su
 
 ```
 profile/        ← perfil del estudiante
-schema/         ← reglas (modes + 4 protocolos + wiki-conventions)
+schema/         ← reglas (modes + 4 protocolos + wiki-conventions + output-conventions)
 .claude/commands/  ← adapters de slash commands
 wiki/           ← grafo de conocimiento (LLM-owned)
-raw/            ← fuentes inmutables (human-archived)
+raw/            ← fuentes inmutables (human-archived) + .md extraídos por atlas-local
+local/          ← pipeline de extracción local (PDF→markdown, GPU). Ver local/README.md
 subjects/       ← una entrada por materia
 archive/        ← materias finalizadas (local, no en git)
 logs/           ← logs por mes (local, no en git)

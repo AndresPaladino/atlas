@@ -38,6 +38,19 @@ SORT bloom DESC, file.name ASC
 - [[thread]]
 - [[regular-expression]]
 - [[finite-automaton]]
+- [[singular-value-decomposition]]
+- [[singular-values]]
+- [[unitary-matrix]]
+- [[low-rank-approximation]]
+- [[frobenius-norm]]
+- [[spectral-norm]]
+- [[four-fundamental-subspaces]]
+- [[pseudo-inverse]]
+- [[condition-number]]
+- [[principal-component-analysis]]
+- [[covariance-matrix]]
+- [[randomized-svd]]
+- [[tensor-decomposition]]
 
 ---
 
@@ -55,6 +68,7 @@ SORT bloom DESC, file.name ASC
 - [[stokes-theorem]]
 - [[gauss-theorem]]
 - [[arden-lemma]]
+- [[eckart-young-theorem]]
 
 ---
 
@@ -70,6 +84,9 @@ SORT bloom DESC, file.name ASC
 - [[hessian-criterion]]
 - [[kleene-analysis]]
 - [[normal-vector-parametric-surface]]
+- [[method-of-snapshots]]
+- [[optimal-hard-threshold]]
+- [[least-squares-regression]]
 
 ---
 
@@ -83,6 +100,9 @@ SORT file.mtime DESC
 
 ### Fallback manual
 - [[cycloid-parametrization]]
+- [[circle-parametrization]]
+- [[line-segment-parametrization]]
+- [[helix-parametrization]]
 
 ---
 
@@ -109,6 +129,7 @@ SORT file.mtime DESC
 
 ### Fallback manual
 - [[gonzalez-cvec-2023]]
+- [[brunton-kutz-ch1]]
 
 ---
 

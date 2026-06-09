@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "entries": {
+    "_sample_cvec.pdf": {
+      "sha256": "3bba30bc8280b1e21786d690b1ef1b87dba471c72bbef6af99efefd0ebf30613",
+      "extractor": "marker",
+      "extractor_version": "1.10.2",
+      "device": "mps",
+      "extracted_at": "2026-06-09T23:09:32+00:00",
+      "md_path": "_sample_cvec.md",
+      "n_pages": 5,
+      "n_figs": 0
+    }
+  }
+}

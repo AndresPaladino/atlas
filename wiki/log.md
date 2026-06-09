@@ -11,6 +11,33 @@ El log es **concept-bound**: registra qué pasó al grafo de conocimiento. El re
 
 ---
 
+## [2026-06-04] query | Parametrización de curvas — ejemplos básicos
+
+- Páginas creadas (3 ejemplos): [[circle-parametrization]], [[line-segment-parametrization]], [[helix-parametrization]]
+- Ilustran: [[curve-parametrization]]
+
+---
+
+## [2026-06-02] ingest | Data-Driven Science and Engineering — Ch. 1 (Brunton & Kutz)
+
+- Fuente: [[brunton-kutz-ch1]] (`raw/Data-Driven Science and Engineering_p29-p85.pdf`)
+- Páginas wiki creadas (13 conceptos):
+  [[singular-value-decomposition]], [[singular-values]], [[unitary-matrix]], [[low-rank-approximation]], [[frobenius-norm]], [[spectral-norm]], [[four-fundamental-subspaces]], [[pseudo-inverse]], [[condition-number]], [[principal-component-analysis]], [[covariance-matrix]], [[randomized-svd]], [[tensor-decomposition]]
+- Páginas wiki creadas (1 teorema):
+  [[eckart-young-theorem]]
+- Páginas wiki creadas (3 métodos):
+  [[method-of-snapshots]], [[optimal-hard-threshold]], [[least-squares-regression]]
+- Aristas nuevas destacadas:
+  [[singular-value-decomposition]] requires [[unitary-matrix]], [[singular-values]];
+  [[singular-value-decomposition]] unlocks [[low-rank-approximation]], [[pseudo-inverse]], [[principal-component-analysis]], [[four-fundamental-subspaces]];
+  [[eckart-young-theorem]] requires [[low-rank-approximation]], [[frobenius-norm]], [[spectral-norm]];
+  [[pseudo-inverse]] requires [[four-fundamental-subspaces]];
+  [[least-squares-regression]] requires [[pseudo-inverse]];
+  [[principal-component-analysis]] requires [[covariance-matrix]];
+  [[optimal-hard-threshold]] requires [[eckart-young-theorem]]
+
+---
+
 ## [2026-06-02] query | versor normal a superficie paramétrica
 
 - Página creada: [[normal-vector-parametric-surface]]
