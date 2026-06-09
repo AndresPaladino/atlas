@@ -99,6 +99,43 @@ def status(
     )
 
 
+# ── git push helper ───────────────────────────────────────────────────────────
+def _git_push(raw_dir: Path, extracted_pdfs: list[Path]) -> None:
+    import subprocess
+
+    repo_root = raw_dir.parent
+    md_files = [str(p.with_suffix(".md").relative_to(repo_root)) for p in extracted_pdfs]
+    manifest_rel = str((raw_dir / ".atlas-extract.json").relative_to(repo_root))
+
+    def run(cmd: list[str]) -> subprocess.CompletedProcess:
+        return subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True)
+
+    console.print("\n[cyan]▸ git add …[/cyan]")
+    r = run(["git", "add"] + md_files + [manifest_rel])
+    if r.returncode != 0:
+        console.print(f"[red]git add falló:[/red] {r.stderr.strip()}")
+        return
+
+    n = len(md_files)
+    names = ", ".join(Path(f).stem for f in md_files)
+    msg = f"Extract {n} PDF(s) to markdown via atlas-local [{names}]"
+    console.print(f"[cyan]▸ git commit …[/cyan]")
+    r = run(["git", "commit", "-m", msg])
+    if r.returncode != 0:
+        if "nothing to commit" in r.stdout:
+            console.print("[yellow]Nada nuevo para commitear (ya estaba up to date).[/yellow]")
+        else:
+            console.print(f"[red]git commit falló:[/red] {r.stderr.strip()}")
+        return
+
+    console.print("[cyan]▸ git push …[/cyan]")
+    r = run(["git", "push"])
+    if r.returncode == 0:
+        console.print("[green]✓ Push exitoso.[/green]")
+    else:
+        console.print(f"[red]git push falló:[/red] {r.stderr.strip()}")
+
+
 # ── extract ────────────────────────────────────────────────────────────────────
 @app.command()
 def extract(
@@ -106,6 +143,7 @@ def extract(
     raw: Optional[Path] = typer.Option(None, "--raw", help="Directorio raw/ (auto-detectado por defecto)."),
     captions: bool = typer.Option(False, "--captions", help="Generar captions de figuras (requiere Ollama)."),
     force: bool = typer.Option(False, "--force", help="Re-extraer aunque ya esté converted."),
+    push: bool = typer.Option(False, "--push", help="Commit y push de los .md y manifest al terminar."),
 ) -> None:
     """Convierte PDFs de raw/ a markdown (sibling .md) y actualiza el manifest."""
     from .extract import Extractor  # import perezoso (arrastra torch/marker)
@@ -143,6 +181,7 @@ def extract(
 
     extractor = Extractor(tier, device)
     ok = 0
+    extracted = []
     for pdf in targets:
         rel = pdf.relative_to(raw_dir).as_posix() if raw_dir in pdf.parents or pdf.parent == raw_dir else pdf.name
         try:
@@ -172,6 +211,7 @@ def extract(
                 n_pages=result.n_pages, n_figs=result.n_figs,
             )
             ok += 1
+            extracted.append(pdf)
             console.print(f"[green]✓[/green] {result.n_pages}p / {result.n_figs} figs")
         except Exception as exc:  # noqa: BLE001 — un PDF roto no debe frenar el batch
             console.print(f"[red]✗ {exc}[/red]")
@@ -179,6 +219,9 @@ def extract(
     manifest.save()
     console.print(f"\n[green]Listo:[/green] {ok}/{len(targets)} extraídos. "
                   f"Manifest: {manifest.path.relative_to(raw_dir.parent)}")
+
+    if push and extracted:
+        _git_push(raw_dir, extracted)
 
 
 @app.command()
