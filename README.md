@@ -114,7 +114,7 @@ Hoy hay dos interfaces de primera clase sobre los mismos archivos: Claude Code y
 ### Instalación
 
 ```bash
-git clone [https://github.com/TU_USUARIO/atlas.git](https://github.com/AndresPaladino/atlas.git)
+git clone https://github.com/AndresPaladino/atlas.git
 cd atlas
 bash setup.sh
 ```
