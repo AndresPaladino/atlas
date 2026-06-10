@@ -43,7 +43,15 @@ for d in wiki/concepts wiki/theorems wiki/methods wiki/examples wiki/comparisons
 done
 echo "🧠  Wiki directory scaffolded: wiki/{concepts,theorems,methods,examples,comparisons,sources}/"
 
-# ── 5. Done ───────────────────────────────────────────────────────────────────
+# ── 5. Install atlas-local (PDF → markdown pipeline) ─────────────────────────
+if [ -f "$ATLAS_PATH/local/install.sh" ]; then
+  echo "⚙️  Installing atlas-local (PDF extraction pipeline)..."
+  bash "$ATLAS_PATH/local/install.sh"
+else
+  echo "   ⚠️  local/install.sh not found, skipping atlas-local install"
+fi
+
+# ── 6. Done ───────────────────────────────────────────────────────────────────
 echo ""
 echo "✅  Atlas ready. Open Claude Code in this directory to start a session."
 echo "   → Read profile/student_profile.md and update your active subjects."
