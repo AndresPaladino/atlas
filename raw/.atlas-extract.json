@@ -10,6 +10,16 @@
       "md_path": "_sample_cvec.md",
       "n_pages": 5,
       "n_figs": 0
+    },
+    "ex_dic_18.pdf": {
+      "sha256": "ee8d2f8e440902729bcb227870109864c3eb3bb5b8ef70f4dbfbd7b10108ea1c",
+      "extractor": "marker",
+      "extractor_version": "1.10.2",
+      "device": "cuda",
+      "extracted_at": "2026-06-10T21:52:32+00:00",
+      "md_path": "ex_dic_18.md",
+      "n_pages": 4,
+      "n_figs": 4
     }
   }
 }

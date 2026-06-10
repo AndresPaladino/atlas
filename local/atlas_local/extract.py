@@ -76,7 +76,14 @@ class Extractor:
             from marker.converters.pdf import PdfConverter
             from marker.models import create_model_dict
 
-            self._converter = PdfConverter(artifact_dict=create_model_dict())
+            # pdftext_workers=1 desactiva ProcessPoolExecutor en pdftext.
+            # fork() después de inicializar CUDA crashea el kernel de WSL2
+            # (y es inestable en general con CUDA). Los propios scripts de
+            # servidor de marker fijan este mismo valor por la misma razón.
+            self._converter = PdfConverter(
+                artifact_dict=create_model_dict(),
+                config={"pdftext_workers": 1},
+            )
         return self._converter
 
     def _extract_marker(self, pdf: Path) -> ExtractResult:
