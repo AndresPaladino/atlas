@@ -25,7 +25,7 @@ Ok "uv $((uv --version).Split(' ')[1])"
 # ── 2. Instalar atlas globalmente ─────────────────────────────────────────────
 Say "Instalando atlas como comando global (uv tool install)…"
 $env:UV_TORCH_BACKEND = "auto"
-uv tool install --extra render $PSScriptRoot
+uv tool install "${PSScriptRoot}[render]"
 Ok "atlas instalado en PATH"
 
 # ── 3. Ollama (opcional, solo para captions de figuras) ──────────────────────
