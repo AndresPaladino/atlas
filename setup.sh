@@ -31,11 +31,12 @@ done
 echo "🧠  Wiki directory scaffolded: wiki/{concepts,theorems,methods,examples,comparisons,sources}/"
 
 # ── 3. Install atlas-local (PDF → markdown pipeline) ─────────────────────────
-if [ -f "$ATLAS_PATH/local/install.sh" ]; then
-  echo "⚙️  Installing atlas-local (PDF extraction pipeline)..."
-  bash "$ATLAS_PATH/local/install.sh"
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || -n "$WINDIR" ]]; then
+  echo "⚙️  Installing atlas (PDF extraction pipeline, Windows)..."
+  powershell.exe -ExecutionPolicy Bypass -File "$ATLAS_PATH\\tools\\install.ps1"
 else
-  echo "   ⚠️  local/install.sh not found, skipping atlas-local install"
+  echo "⚙️  Installing atlas (PDF extraction pipeline)..."
+  bash "$ATLAS_PATH/tools/install.sh"
 fi
 
 # ── 4. Done ───────────────────────────────────────────────────────────────────

@@ -24,7 +24,7 @@ ok "uv $(uv --version | awk '{print $2}')"
 
 # ── 2. Instalar atlas globalmente ─────────────────────────────────────────────
 say "Instalando atlas como comando global (uv tool install)…"
-UV_TORCH_BACKEND=auto uv tool install --extra render "$HERE"
+UV_TORCH_BACKEND=auto uv tool install "${HERE}[render]"
 ok "atlas instalado en PATH"
 
 # ── 3. Ollama (opcional, solo para captions de figuras) ──────────────────────
