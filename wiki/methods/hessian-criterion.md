@@ -6,11 +6,9 @@ areas: [math]
 tags: [calculus/vector, optimization, critical-points]
 requires: ["[[critical-point]]"]
 unlocks: []
-bloom: 2
 when_to_use: "Para clasificar un punto crítico de una función escalar $C^2$ en varias variables como máximo, mínimo o silla, cuando la Hessiana evaluada en el punto es no singular."
 fails_when: "$\\det H_f(p) = 0$ (Hessiana singular): el criterio no decide. Hay que recurrir a análisis por definición, restricción a curvas, o desarrollos de Taylor de orden superior."
 sources: []
-seen_in_subjects: [calculo-vectorial]
 created: 2026-06-02
 updated: 2026-06-02
 ---

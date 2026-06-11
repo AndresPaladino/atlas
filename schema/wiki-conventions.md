@@ -1,6 +1,6 @@
 ---
 type: schema
-updated: 2026-06-02
+updated: 2026-06-10
 ---
 
 # Convenciones del wiki
@@ -38,9 +38,7 @@ areas: [math, signals]
 tags: [calculus/vector, integration]
 requires: ["[[gradient]]"]
 unlocks: ["[[greens-theorem]]"]
-bloom: 2
-sources: ["[[marsden-ch5]]", "[[teorico-calc-vec-clase07#p12]]"]
-seen_in_subjects: [calculo-vectorial]
+sources: ["[[marsden-ch5]]"]
 created: 2026-06-02
 updated: 2026-06-02
 ---
@@ -52,18 +50,16 @@ Campos extra por tipo:
 
 - **`theorem`**: `statement_form: "if A and B then C"` — esqueleto lógico.
 - **`method`**: `when_to_use: "..."`, `fails_when: "..."` — selección del método.
-- **`example`**: `illustrates: ["[[concept-or-theorem]]"]`, `difficulty: 1|2|3`, `session_ref: "subjects/<materia>/index.md#<fecha>"`.
+- **`example`**: `illustrates: ["[[concept-or-theorem]]"]`, `difficulty: 1|2|3`.
 - **`source`**: `source_kind: lecture|book|paper|notes`, `path: "raw/foo.pdf"`, `pages: "12-34"`, `covers_concepts: [[...]]`, `covers_theorems: [[...]]`, `covers_methods: [[...]]`.
 - **`comparison`**: `compares: ["[[A]]", "[[B]]"]`.
 - **`area`**: `tag_prefix: "math"` — prefijo de tag que captura sus miembros.
 
 ### Validez de campos
 
-- `bloom`: entero 0–6. **0** = aún no trabajado (default al crear). 1–6 = niveles de la tabla en `CLAUDE.md` / `schema/practice-protocol.md`.
 - `requires` / `unlocks`: arrays de wikilinks `[[slug]]`. Definen el DAG de dependencias.
 - `aliases`: incluir variantes (símbolo, EN, ES, abreviatura). Sirve para el firewall y para resolver `[[wikilinks]]` ambiguos.
 - `tags`: kebab con `/` para jerarquía. Ej: `calculus/vector/integration`.
-- `seen_in_subjects`: slugs de carpetas bajo `subjects/`. Permite Dataview proyectar.
 
 ---
 
@@ -81,7 +77,6 @@ Campos extra por tipo:
 
 - Dentro de `wiki/`: usar `[[slug]]` (Obsidian-style). El slug es el filename sin `.md` ni carpeta.
 - Para wikilinks ambiguos (mismo slug en dos carpetas) usar `[[concepts/gradient]]`.
-- Para cruzar a `subjects/`: ruta relativa, ej `[ver sesión](../subjects/calculo-vectorial/index.md)`.
 - **No usar URLs**, ni paths absolutos, ni `~/`.
 
 ---
@@ -106,21 +101,9 @@ Reglas:
 
 - **kebab-case** siempre. Ej: `implicit-function-theorem.md`, no `ImplicitFunctionTheorem.md`.
 - **Inglés** para términos internacionales (matemática, física, CS estándar).
-- **Español** para términos curso-específicos sin equivalente neutro (ej: `analisis-de-kleene.md` si el curso lo trata como bloque didáctico unitario).
+- **Español** para términos específicos sin equivalente neutro.
 - El `aliases:` del frontmatter cierra el gap idiomático.
 - Nunca incluir el tipo en el nombre del archivo (no `gradient-concept.md`) — el tipo vive en el frontmatter y la carpeta.
-
----
-
-## Bloom — fuente única de verdad
-
-El nivel de Bloom de un concepto vive **únicamente** en el frontmatter de su página wiki (`bloom:`). Las materias proyectan vía Dataview o lectura manual de `seen_in_subjects:`.
-
-Razón: un concepto presente en dos materias = un solo número, sin drift entre archivos.
-
-La sección "Bloom actual" de `subjects/[materia]/index.md` queda como referencia humana legible pero **no es la verdad ejecutable**. Cuando los dos archivos divergen, la wiki gana.
-
-Esto lo verifica `schema/lint-protocol.md` (chequeo "Bloom desincronizado").
 
 ---
 
@@ -156,7 +139,6 @@ Estructura sugerida (no obligatoria — adaptar al tipo):
 
 ## Fuentes
 - [[apostol-vol2-ch13]] §13.4 p. 376
-- [[teorico-calc-vec-clase07]] pp. 8-15
 ```
 
 El frontmatter es lo no-negociable. El cuerpo debe ser legible pero su estructura es discrecional.
@@ -170,8 +152,7 @@ Cuando un modo modifica una página:
 1. Actualizar `updated:` en el frontmatter.
 2. Si se agrega una fuente nueva: append a `sources:` (no reemplazar).
 3. Si se agrega área nueva: append a `areas:`.
-4. Si `bloom:` cambia: registrar el cambio en `wiki/log.md` con motivo.
-5. Si `requires:` o `unlocks:` cambian: verificar que los wikilinks existan (o se vayan a crear en la misma operación).
+4. Si `requires:` o `unlocks:` cambian: verificar que los wikilinks existan (o se vayan a crear en la misma operación).
 
 ---
 

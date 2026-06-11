@@ -6,9 +6,7 @@ areas: [linear-algebra, data-science]
 tags: [linear-algebra/matrix-decomposition, data-science/dimensionality-reduction]
 requires: ["[[singular-value-decomposition]]", "[[singular-values]]"]
 unlocks: ["[[eckart-young-theorem]]", "[[randomized-svd]]", "[[principal-component-analysis]]"]
-bloom: 0
 sources: ["[[brunton-kutz-ch1]]"]
-seen_in_subjects: []
 created: 2026-06-02
 updated: 2026-06-02
 ---

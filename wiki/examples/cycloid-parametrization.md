@@ -6,12 +6,9 @@ areas: [math]
 tags: [calculus/vector, curves, examples]
 requires: []
 unlocks: []
-bloom: 2
 illustrates: ["[[curve-parametrization]]"]
 difficulty: 2
-session_ref: "subjects/calculo-vectorial/index.md#2026-04-19"
 sources: []
-seen_in_subjects: [calculo-vectorial]
 created: 2026-06-02
 updated: 2026-06-02
 ---
@@ -48,4 +45,3 @@ $$\gamma'(\theta) = R(1 - \cos\theta, \; \sin\theta).$$
 ## Conexiones
 
 - Ilustra: [[curve-parametrization]]
-- Trabajado en sesión: ver `subjects/calculo-vectorial/index.md` entrada 2026-04-19.

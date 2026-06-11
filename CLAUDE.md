@@ -1,13 +1,10 @@
 # Atlas — router
 
-Atlas es un sistema de estudio personal para ingeniería. Este archivo es el **dispatcher**: dice qué leer y en qué orden. Todo el comportamiento concreto vive en `schema/`.
+Atlas es un sistema personal de conocimiento e interacción con él. Este archivo es el **dispatcher**: dice qué leer y en qué orden. Todo el comportamiento concreto vive en `schema/`.
 
 ## Al iniciar una sesión
 
-Leé, en este orden:
-
-1. `profile/student_profile.md` — materias activas y preferencias.
-2. `schema/modes.md` — los 4 modos, default heurístico, firewall.
+Leé `schema/modes.md` — los 4 modos, default heurístico, firewall.
 
 No leas más cosas hasta saber qué modo activar.
 
@@ -28,29 +25,17 @@ Una vez identificado el modo, leé el protocolo correspondiente y aplicalo.
 
 Español. Términos técnicos en inglés son aceptables.
 
-## Bloom — referencia
+## Preferencias de interacción
 
-| Nivel | Descriptor | Qué puede hacer el estudiante |
-|-------|-----------|-------------------------------|
-| 1 | Inicial | Reconoce el concepto, no puede aplicarlo solo |
-| 2 | Comprensión | Explica con sus palabras |
-| 3 | Aplicación | Resuelve ejercicios tipo con guía |
-| 4 | Análisis | Identifica qué herramienta usar sin que se lo digan |
-| 5 | Síntesis | Combina conceptos para resolver problemas nuevos |
-| 6 | Evaluación | Puede enseñarlo y detectar errores en soluciones ajenas |
-
-La fuente única de verdad del Bloom de cada concepto es el campo `bloom:` en su página `wiki/`. Las materias proyectan vía Dataview. Detalles en `schema/wiki-conventions.md`.
+- Socrático puro en práctica: nunca dar solución directa. El usuario tipea sus pasos; el agente evalúa y da pista mínima si está trabado.
+- Ejemplos concretos antes de abstracción.
 
 ## Estructura
 
 ```
-profile/        ← perfil del estudiante
-schema/         ← reglas (modes + 4 protocolos + wiki-conventions + output-conventions)
+schema/            ← reglas (modes + 4 protocolos + wiki-conventions + output-conventions)
 .claude/commands/  ← adapters de slash commands
-wiki/           ← grafo de conocimiento (LLM-owned)
-raw/            ← fuentes inmutables (human-archived) + .md extraídos por atlas-local
-local/          ← pipeline de extracción local (PDF→markdown, GPU). Ver local/README.md
-subjects/       ← una entrada por materia
-archive/        ← materias finalizadas (local, no en git)
-logs/           ← logs por mes (local, no en git)
+wiki/              ← grafo de conocimiento (LLM-owned)
+raw/               ← fuentes inmutables (human-archived) + .md extraídos por atlas
+tools/             ← CLI de extracción local (PDF→markdown, GPU). Ver tools/README.md
 ```

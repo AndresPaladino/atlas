@@ -6,9 +6,7 @@ areas: [linear-algebra]
 tags: [linear-algebra/norms]
 requires: []
 unlocks: ["[[eckart-young-theorem]]", "[[low-rank-approximation]]"]
-bloom: 0
 sources: ["[[brunton-kutz-ch1]]"]
-seen_in_subjects: []
 created: 2026-06-02
 updated: 2026-06-02
 ---

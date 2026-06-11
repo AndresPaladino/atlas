@@ -6,9 +6,7 @@ areas: [math]
 tags: [calculus/vector, integration, curves]
 requires: ["[[curve-parametrization]]", "[[arc-length]]"]
 unlocks: ["[[gradient-field]]", "[[greens-theorem]]"]
-bloom: 0
 sources: ["[[gonzalez-cvec-2023]]"]
-seen_in_subjects: [calculo-vectorial]
 created: 2026-06-02
 updated: 2026-06-02
 ---

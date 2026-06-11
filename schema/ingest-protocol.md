@@ -1,6 +1,6 @@
 ---
 type: schema
-updated: 2026-06-02
+updated: 2026-06-10
 ---
 
 # Protocolo: modo `/ingest`
@@ -16,13 +16,13 @@ Tomar una fuente cruda (PDF, notas, libro, paper) y poblar/actualizar el wiki co
    - Si el comando trae ruta: `Read` directo sobre el archivo en `raw/`.
    - Si trae descripción ("estas notas pegadas"): pedir el contenido.
    - Si trae solo nombre ambiguo: listar `raw/` y preguntar cuál.
-3. Confirmar `source_kind` (book / paper / notes / lecture) con el usuario si no es inferible del nombre del archivo. No asumir materia — la fuente puede no pertenecer a ninguna materia activa.
+3. Confirmar `source_kind` (book / paper / notes / lecture) con el usuario si no es inferible del nombre del archivo.
 
 ---
 
 ## Paso 1 — Leer y mapear
 
-- **Preferir el markdown extraído.** Si existe `raw/<mismo-nombre>.md` (lo produce `atlas-local`, ver `local/`), leer **ese** archivo de texto en vez del PDF: trae el contenido con LaTeX y captions de figuras, y cuesta una fracción de los tokens. Solo si **no** existe el `.md`, hacer `Read` visual sobre el PDF (fallback fiel pero caro).
+- **Preferir el markdown extraído.** Si existe `raw/<mismo-nombre>.md` (lo produce `atlas extract`, ver `tools/`), leer **ese** archivo de texto en vez del PDF: trae el contenido con LaTeX y captions de figuras, y cuesta una fracción de los tokens. Solo si **no** existe el `.md`, hacer `Read` visual sobre el PDF (fallback fiel pero caro).
 - Leer la fuente completa (o pedir rango de páginas si es muy larga).
 - Construir un mapa interno: para cada sección o diapositiva, listar los conceptos / teoremas / métodos / ejemplos que aparecen.
 - No escribir nada todavía.
@@ -53,9 +53,9 @@ Slug:
 - Para libros o capítulos: `<autor-apellido>-<libro-abrev>` o `<autor>-ch<NN>`.
 - Para papers: `<primer-autor>-<año>-<tema-corto>`.
 - Para apuntes o notas: `<tema-corto>-notes` o `<autor-o-curso>-<tema>`.
-- Para teóricos (si aplica): `<tema>-lecture` o `<materia>-clase<NN>`.
+- Para teóricos: `<tema>-lecture` o `<curso>-clase<NN>`.
 
-No codificar la materia en el slug — el slug describe el contenido, no el contexto de uso.
+No codificar el origen en el slug — el slug describe el contenido, no el contexto de uso.
 
 Frontmatter:
 
@@ -66,7 +66,7 @@ title: "<título legible>"
 aliases: ["<variantes>"]
 source_kind: book | paper | notes | lecture
 path: "raw/<nombre-de-archivo>"   # ruta relativa al repo, sin subcarpetas (siempre el .pdf, fuente inmutable)
-extracted: "raw/<nombre-de-archivo>.md"  # opcional: markdown cacheado leído en el ingest (atlas-local)
+extracted: "raw/<nombre-de-archivo>.md"  # opcional: markdown cacheado leído en el ingest (atlas extract)
 pages: "1-24"                     # rango cubierto, opcional
 areas: [math, signals]
 tags: [calculus/vector]
@@ -105,14 +105,11 @@ Hacer un lookup en `wiki/index.md` por título / alias / slug.
 - Append la fuente nueva a `sources:` del frontmatter.
 - Si la fuente trae detalles que la página no tenía (ej: enunciado más preciso, ejemplo nuevo, observación) → agregar al cuerpo con cita explícita.
 - Actualizar `updated:`.
-- No tocar `bloom:` (se actualiza solo en `/practice`).
 
 ### Caso B: no existe
 
 - Crear `wiki/<tipo>/<slug>.md` con frontmatter completo según `schema/wiki-conventions.md`.
 - `sources:` arranca con la fuente recién creada.
-- `bloom: 0` (no trabajado todavía).
-- `seen_in_subjects:` = vacío por defecto. Solo completar si el concepto aparece explícitamente en una de las materias activas del perfil (verificar `profile/student_profile.md`). La fuente no determina la materia — el uso en práctica sí.
 - Cuerpo: definición + intuición + (si aplica) enunciado/cuándo-usar. Mínimo un párrafo legible — no stubs vacíos.
 
 ---
@@ -168,7 +165,7 @@ Resumen al usuario:
 
 - **No stubs vacíos**: toda página creada tiene al menos un párrafo de contenido. Si no se puede escribir un párrafo útil, mejor no crearla y dejar el concepto mencionado en `sources/`.
 - **Citas obligatorias** en claims fuertes: el primer párrafo de una página nueva debe llevar al menos una cita a la fuente que la originó.
-- **Idioma según `wiki-conventions.md`**: slug en inglés para términos internacionales; español para curso-específicos.
+- **Idioma según `wiki-conventions.md`**: slug en inglés para términos internacionales; español para específicos.
 - **No duplicar**: antes de crear, buscar por aliases en `wiki/index.md`. Si hay ambigüedad, preguntar al usuario.
 
 ---
@@ -183,7 +180,7 @@ Activado con `/ingest --compile`. Escanea `raw/` en busca de archivos no registr
 2. Leer los frontmatters de todos los archivos bajo `wiki/sources/` y extraer el campo `path:` de cada uno.
 3. Construir la lista de **archivos no registrados**: fuentes en `raw/` cuyo path no aparece en ningún `path:` de `wiki/sources/`.
 4. Para cada fuente nueva, chequear si existe su `.md` cacheado (mismo nombre, extensión `.md`). Si **falta**, avisar y sugerir correr la extracción local antes de ingerir (no convertir el PDF desde Claude):
-   > "`<archivo>.pdf` no tiene markdown extraído. Corré `cd local && uv run atlas-local extract` (o `atlas-local extract raw/<archivo>.pdf`) y volvé a `/ingest --compile`. Si querés ingerirlo igual ahora, lo leo visualmente del PDF (más caro en tokens)."
+   > "`<archivo>.pdf` no tiene markdown extraído. Corré `atlas extract` (o `atlas extract raw/<archivo>.pdf`) y volvé a `/ingest --compile`. Si querés ingerirlo igual ahora, lo leo visualmente del PDF (más caro en tokens)."
 
 Si no hay archivos nuevos:
 > "No hay archivos nuevos en `raw/`. Tirá un PDF ahí y volvé a correr `/ingest --compile`."

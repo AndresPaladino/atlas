@@ -27,7 +27,7 @@ desktop, web `claude.ai/code`, o extensión de IDE como VS Code + KaTeX-for-Clau
 Si el usuario lee desde una terminal sin render (no recomendado), la mate sale
 como LaTeX literal. Claude Code no expone un hook que reescriba el texto que
 muestra, así que no hay render vivo en la terminal. Como paliativo hay un
-**filtro standalone** (`atlas-local render`, ver `local/README.md`) que convierte
+**filtro standalone** (`atlas render`, ver `tools/README.md`) que convierte
 LaTeX→Unicode best-effort sobre texto ya guardado (p.ej. una respuesta archivada
 al wiki). La recomendación sigue siendo leer en un cliente con render.
 

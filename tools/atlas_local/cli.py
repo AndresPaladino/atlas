@@ -1,4 +1,4 @@
-"""CLI de atlas-local:  extract · status · doctor."""
+"""CLI de atlas:  extract · status · doctor."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from .manifest import Manifest, Status
 
 app = typer.Typer(
     add_completion=False,
-    help="Extracción local de PDFs para Atlas (PDF → markdown+LaTeX+captions).",
+    help="Atlas CLI — extrae PDFs a markdown (PDF → markdown+LaTeX+captions).",
 )
 console = Console()
 
@@ -49,7 +49,7 @@ def doctor() -> None:
     tier = resolve_tier(device)
     has_ollama = ollama_available()
 
-    table = Table(title=f"atlas-local v{__version__} · diagnóstico", show_header=False)
+    table = Table(title=f"atlas v{__version__} · diagnóstico", show_header=False)
     table.add_row("Device", device.label)
     table.add_row("torch", "disponible" if device.torch_available else "[red]NO instalado[/red]")
     table.add_row("Tier", tier.summary)

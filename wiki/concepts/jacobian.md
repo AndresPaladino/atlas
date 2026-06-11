@@ -6,9 +6,7 @@ areas: [math]
 tags: [calculus/vector, differentiation]
 requires: []
 unlocks: ["[[implicit-function-theorem]]"]
-bloom: 1
 sources: []
-seen_in_subjects: [calculo-vectorial]
 created: 2026-06-02
 updated: 2026-06-02
 ---

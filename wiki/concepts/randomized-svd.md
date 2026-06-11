@@ -6,9 +6,7 @@ areas: [linear-algebra, data-science, numerical-analysis]
 tags: [linear-algebra/matrix-decomposition, numerical-analysis/algorithms]
 requires: ["[[singular-value-decomposition]]", "[[low-rank-approximation]]"]
 unlocks: []
-bloom: 0
 sources: ["[[brunton-kutz-ch1]]"]
-seen_in_subjects: []
 created: 2026-06-02
 updated: 2026-06-02
 ---

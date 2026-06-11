@@ -6,9 +6,7 @@ areas: [linear-algebra, data-science]
 tags: [linear-algebra/matrix-decomposition]
 requires: ["[[unitary-matrix]]", "[[singular-values]]"]
 unlocks: ["[[low-rank-approximation]]", "[[pseudo-inverse]]", "[[principal-component-analysis]]", "[[four-fundamental-subspaces]]", "[[method-of-snapshots]]", "[[randomized-svd]]"]
-bloom: 0
 sources: ["[[brunton-kutz-ch1]]"]
-seen_in_subjects: []
 created: 2026-06-02
 updated: 2026-06-02
 ---

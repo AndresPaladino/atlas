@@ -1,7 +1,7 @@
 [project]
-name = "atlas-local"
-version = "0.1.0"
-description = "Capa de extracción local para Atlas: PDF → markdown+LaTeX+captions, en la GPU disponible (CUDA/MPS/CPU)."
+name = "atlas"
+version = "0.2.0"
+description = "CLI de extracción local para Atlas: PDF → markdown+LaTeX+captions, en la GPU disponible (CUDA/MPS/CPU)."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.scripts]
-atlas-local = "atlas_local.cli:app"
+atlas = "atlas_local.cli:app"
 
 [project.optional-dependencies]
 # Hook opcional LaTeX→Unicode para terminal cruda (Fase 3).
@@ -34,6 +34,6 @@ build-backend = "hatchling.build"
 packages = ["atlas_local"]
 
 # uv resuelve el backend de torch automáticamente (cuda/mps/cpu) según la plataforma.
-# El install.sh / install.ps1 exporta UV_TORCH_BACKEND=auto antes de `uv sync`.
+# El install.sh / install.ps1 exporta UV_TORCH_BACKEND=auto antes de `uv tool install`.
 [tool.uv]
 # torch viene como dependencia transitiva de marker-pdf; dejamos que uv elija el wheel.

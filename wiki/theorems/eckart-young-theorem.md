@@ -7,9 +7,7 @@ areas: [linear-algebra, data-science]
 tags: [linear-algebra/matrix-decomposition]
 requires: ["[[singular-value-decomposition]]", "[[low-rank-approximation]]", "[[frobenius-norm]]", "[[spectral-norm]]"]
 unlocks: ["[[optimal-hard-threshold]]"]
-bloom: 0
 sources: ["[[brunton-kutz-ch1]]"]
-seen_in_subjects: []
 created: 2026-06-02
 updated: 2026-06-02
 ---

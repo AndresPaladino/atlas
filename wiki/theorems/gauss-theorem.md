@@ -7,9 +7,7 @@ tags: [calculus/vector, integration, theorems]
 statement_form: "if V is a solid bounded by closed surface S and X is C1 on V then triple integral of div X over V equals flux through S"
 requires: ["[[surface-integral]]", "[[divergence]]", "[[stokes-theorem]]"]
 unlocks: []
-bloom: 0
 sources: ["[[gonzalez-cvec-2023]]"]
-seen_in_subjects: [calculo-vectorial]
 created: 2026-06-02
 updated: 2026-06-02
 ---

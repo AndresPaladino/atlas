@@ -1,6 +1,6 @@
 ---
 type: schema
-updated: 2026-06-02
+updated: 2026-06-10
 ---
 
 # Protocolo: modo `/query`
@@ -81,7 +81,7 @@ Recomendar el tipo según contenido:
 
 1. Decidir slug y tipo (puede preguntar al usuario si hay ambigüedad).
 2. Crear `wiki/<tipo>/<slug>.md` siguiendo `schema/wiki-conventions.md`.
-3. Frontmatter completo: `type`, `title`, `aliases`, `areas`, `tags`, `requires`, `unlocks`, `bloom: 0`, `sources` (todas las fuentes citadas en la respuesta), `seen_in_subjects: []`, `created`, `updated`.
+3. Frontmatter completo: `type`, `title`, `aliases`, `areas`, `tags`, `requires`, `unlocks`, `sources` (todas las fuentes citadas en la respuesta), `created`, `updated`.
 4. Cuerpo: el desarrollo de la respuesta, limpio. Eliminar el "respuesta corta" si suena conversacional; conservar las conexiones.
 5. Actualizar `wiki/index.md` (append a la sección correspondiente).
 6. Si el tipo es `comparison`: agregar la página al `wiki/areas/<area>.md` correspondiente si Dataview no lo hace solo.
@@ -116,7 +116,6 @@ Cuando vuelva a `/practice` (slash explícito o frase), el firewall se reactiva 
 ## Reglas de calidad
 
 - **No alucinar citas**: si una afirmación no está respaldada por una fuente listada en el wiki o por una página wiki existente, marcarla explícitamente como "(síntesis propia, sin fuente confirmada)".
-- **Profundidad acorde al Bloom**: si la pregunta versa sobre un tema con `bloom: 2` en el wiki, calibrar profundidad de la explicación a ese nivel (no asumir más).
 - **No repetir desarrollos que ya están en una página wiki**: si la respuesta consiste en "ver `[[X]]`" + 2 oraciones de contexto, eso es lo correcto. No re-derivar.
 
 ---

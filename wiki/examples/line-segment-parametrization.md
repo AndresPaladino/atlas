@@ -6,11 +6,9 @@ areas: [math]
 tags: [calculus/vector, curves, examples]
 requires: ["[[curve-parametrization]]"]
 unlocks: []
-bloom: 0
 illustrates: ["[[curve-parametrization]]"]
 difficulty: 1
 sources: []
-seen_in_subjects: [calculo-vectorial]
 created: 2026-06-04
 updated: 2026-06-04
 ---

@@ -8,9 +8,7 @@ areas: [linear-algebra, statistics, data-science]
 tags: [linear-algebra/linear-systems, statistics/regression]
 requires: ["[[pseudo-inverse]]", "[[four-fundamental-subspaces]]"]
 unlocks: []
-bloom: 0
 sources: ["[[brunton-kutz-ch1]]"]
-seen_in_subjects: []
 created: 2026-06-02
 updated: 2026-06-02
 ---

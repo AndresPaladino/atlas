@@ -7,15 +7,15 @@ updated: 2026-06-02
 
 # ML — MOC
 
-Área que agrupa machine learning clásico (regresión, clasificación, clustering), deep learning, optimización, probabilidad y estadística aplicada a ML. Sin materia activa en la carrera todavía — esta área se puebla con interés propio.
+Área que agrupa machine learning clásico (regresión, clasificación, clustering), deep learning, optimización, probabilidad y estadística aplicada a ML.
 
 ## Conceptos
 
 ```dataview
-TABLE bloom, tags
+TABLE tags
 FROM "wiki/concepts"
 WHERE contains(areas, "ml")
-SORT bloom DESC, file.name ASC
+SORT file.name ASC
 ```
 
 ### Fallback manual
@@ -24,10 +24,10 @@ SORT bloom DESC, file.name ASC
 ## Teoremas
 
 ```dataview
-TABLE bloom, statement_form
+TABLE statement_form
 FROM "wiki/theorems"
 WHERE contains(areas, "ml")
-SORT bloom DESC
+SORT file.name ASC
 ```
 
 ### Fallback manual
@@ -36,10 +36,10 @@ SORT bloom DESC
 ## Métodos
 
 ```dataview
-TABLE bloom, when_to_use
+TABLE when_to_use
 FROM "wiki/methods"
 WHERE contains(areas, "ml")
-SORT bloom DESC
+SORT file.name ASC
 ```
 
 ### Fallback manual

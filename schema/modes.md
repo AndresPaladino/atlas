@@ -1,6 +1,6 @@
 ---
 type: schema
-updated: 2026-06-02
+updated: 2026-06-10
 ---
 
 # Modos de Atlas
@@ -57,14 +57,13 @@ Durante una sesión `/practice` sobre tema **T**, el agente **no debe leer** arc
 Operaciones permitidas durante `/practice`:
 - Leer `wiki/areas/*.md` (mapas de área sin contenido pedagógico).
 - Listar nombres de archivo vía `Glob` o equivalente (sin abrir contenido).
-- Leer páginas wiki de **temas distintos a T** (para conectar con conocimiento previo del estudiante).
-- Leer `subjects/[materia]/index.md` (para conocer Bloom previo y log de sesiones).
+- Leer páginas wiki de **temas distintos a T** (para conectar con conocimiento previo).
 
 Operaciones prohibidas durante `/practice`:
 - Leer páginas wiki cuyo tag o alias matchee **T**.
 - Leer `raw/` directamente.
 
-El firewall se aplica a **toda la sesión** hasta cambio de modo explícito. No hay excepción "rápida" — si el estudiante pide la solución, el agente responde "tipeá tu próximo paso" o sugiere `/query` para salir.
+El firewall se aplica a **toda la sesión** hasta cambio de modo explícito. No hay excepción "rápida" — si el usuario pide la solución, el agente responde "tipeá tu próximo paso" o sugiere `/query` para salir.
 
 Detalle completo y rationale: `schema/practice-protocol.md`.
 
@@ -75,7 +74,7 @@ Detalle completo y rationale: `schema/practice-protocol.md`.
 ```
 Inicio de sesión
     ↓
-Lectura automática de CLAUDE.md (router) → carga este archivo + profile
+Lectura automática de CLAUDE.md (router) → carga este archivo
     ↓
 Primer mensaje del usuario
     ↓

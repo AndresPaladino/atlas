@@ -20,6 +20,16 @@
       "md_path": "ex_dic_18.md",
       "n_pages": 4,
       "n_figs": 4
+    },
+    "examen7_12_19.pdf": {
+      "sha256": "df249db582f145bd2952388f69194907d0da20679c9df7de3856ed1923d090c7",
+      "extractor": "marker",
+      "extractor_version": "1.10.2",
+      "device": "cuda",
+      "extracted_at": "2026-06-10T23:11:44+00:00",
+      "md_path": "examen7_12_19.md",
+      "n_pages": 1,
+      "n_figs": 0
     }
   }
 }

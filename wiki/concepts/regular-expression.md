@@ -6,9 +6,7 @@ areas: [computing]
 tags: [formal-languages, regular-languages]
 requires: []
 unlocks: ["[[arden-lemma]]", "[[kleene-analysis]]"]
-bloom: 3
 sources: []
-seen_in_subjects: [teoria-lenguajes]
 created: 2026-06-02
 updated: 2026-06-02
 ---

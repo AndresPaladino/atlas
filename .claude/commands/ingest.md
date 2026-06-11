@@ -6,6 +6,6 @@ Activá modo `ingest`. Antes de responder, leé `schema/ingest-protocol.md` y `s
 
 Argumento del usuario: $ARGUMENTS
 
-- Si el argumento es `--compile` (o `compile`): ejecutá el modo compile del protocolo (sección "Modo compile"). Recordá: el ingest lee el `.md` cacheado en `raw/` (producido por `atlas-local`) si existe; el PDF visual es fallback.
+- Si el argumento es `--compile` (o `compile`): ejecutá el modo compile del protocolo (sección "Modo compile"). Recordá: el ingest lee el `.md` cacheado en `raw/` (producido por `atlas extract`) si existe; el PDF visual es fallback.
 - Si el argumento es una ruta de archivo en `raw/`: leerla y arrancar el flujo normal del protocolo.
 - Si está vacío o es ambiguo: preguntá qué fuente vas a ingerir.

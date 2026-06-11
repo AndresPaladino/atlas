@@ -6,9 +6,7 @@ areas: [math]
 tags: [calculus/vector, fields, differential-operators]
 requires: ["[[jacobian]]"]
 unlocks: ["[[solenoidal-field]]", "[[gauss-theorem]]"]
-bloom: 0
 sources: ["[[gonzalez-cvec-2023]]"]
-seen_in_subjects: [calculo-vectorial]
 created: 2026-06-02
 updated: 2026-06-02
 ---

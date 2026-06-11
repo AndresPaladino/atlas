@@ -6,9 +6,7 @@ areas: [math]
 tags: [calculus/vector, surfaces]
 requires: ["[[curve-parametrization]]", "[[jacobian]]"]
 unlocks: ["[[surface-integral]]"]
-bloom: 0
 sources: ["[[gonzalez-cvec-2023]]"]
-seen_in_subjects: [calculo-vectorial]
 created: 2026-06-02
 updated: 2026-06-02
 ---

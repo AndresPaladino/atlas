@@ -1,6 +1,6 @@
 ---
 type: schema
-updated: 2026-06-02
+updated: 2026-06-10
 ---
 
 # Protocolo: modo `/lint`
@@ -57,25 +57,17 @@ Si `A.requires` incluye `[[B]]`, entonces `B.unlocks` debe incluir `[[A]]`.
 
 **Fix sugerido**: agregar la arista faltante en B.
 
-### 5. Bloom desincronizado
+### 5. Fuentes huérfanas en `raw/`
 
-Comparar `bloom:` en una página wiki con el Bloom mencionado en `subjects/[materia]/index.md` (sección "Bloom actual") para la misma página, vía `seen_in_subjects:`.
+Archivos bajo `raw/` (PDFs) que no tienen ningún `wiki/sources/*.md` cuyo `path:` apunte a ellos.
 
-**Finding**: `bloom-drift | [[<slug>]] tiene bloom=3 en wiki pero sección "Bloom actual" en subjects/<materia>/index.md dice 2`
-
-**Fix sugerido**: la wiki es la fuente única de verdad — actualizar la sección de subjects. Confirmar con el usuario antes de tocar.
-
-### 6. Fuentes huérfanas en `raw/`
-
-Archivos bajo `raw/` (PDFs, notas) que no tienen ningún `wiki/sources/*.md` cuyo `path:` apunte a ellos.
+Excepción: archivos `.md` y `.jpeg`/`.jpg`/`.png` en `raw/` son extracciones y figuras producidas por `atlas-local` — no son fuentes primarias, se omiten de este check.
 
 **Finding**: `source-not-ingested | raw/<path>`
 
 **Fix sugerido**: ofrecer correr `/ingest` sobre la fuente.
 
-Excepción: archivos bajo `raw/assets/` (imágenes referenciadas inline) no son orphans — son recursos, no fuentes primarias.
-
-### 7. Teoremas sin `statement_form`
+### 6. Teoremas sin `statement_form`
 
 Páginas `type: theorem` cuyo frontmatter no tiene `statement_form:` definido.
 
@@ -83,7 +75,7 @@ Páginas `type: theorem` cuyo frontmatter no tiene `statement_form:` definido.
 
 **Fix sugerido**: pedir al usuario el `statement_form` (formato "if A then B") y completarlo.
 
-### 8. Métodos sin `when_to_use` / `fails_when`
+### 7. Métodos sin `when_to_use` / `fails_when`
 
 Páginas `type: method` sin uno o ambos campos en frontmatter.
 
@@ -91,7 +83,7 @@ Páginas `type: method` sin uno o ambos campos en frontmatter.
 
 **Fix sugerido**: pedir al usuario los campos y completarlos.
 
-### 9. Conceptos mencionados sin página propia
+### 8. Conceptos mencionados sin página propia
 
 Términos que aparecen ≥3 veces en wikilinks de otras páginas (`[[término]]`) pero no resuelven a ningún archivo existente y no son aliases conocidos.
 
@@ -99,7 +91,7 @@ Términos que aparecen ≥3 veces en wikilinks de otras páginas (`[[término]]`
 
 **Fix sugerido**: crear stub o agregar como alias de una página existente.
 
-### 10. Frontmatter incompleto
+### 9. Frontmatter incompleto
 
 Páginas wiki donde falta algún campo obligatorio según `schema/wiki-conventions.md` (`type`, `title`, `areas`, `created`, `updated`).
 
@@ -107,7 +99,7 @@ Páginas wiki donde falta algún campo obligatorio según `schema/wiki-conventio
 
 **Fix sugerido**: completar con el usuario.
 
-### 11. `updated:` rancio
+### 10. `updated:` rancio
 
 Páginas wiki cuyo `updated:` es anterior a `created:` o anterior al último append a `wiki/log.md` que las menciona.
 
@@ -131,7 +123,6 @@ Archivos analizados: N
 - orphan: 3
 - broken-link: 1
 - edge-asymmetric: 2
-- bloom-drift: 1
 - source-not-ingested: 4
 - theorem-no-statement: 0
 - method-no-applicability: 1
@@ -139,12 +130,12 @@ Archivos analizados: N
 - frontmatter-incomplete: 0
 - updated-stale: 0
 
-Total findings: 14
+Total findings: 13
 ```
 
 Después, ofrecer:
 
-> "¿Querés que abordemos los findings uno por uno? Empiezo por los más impactantes (broken-link, edge-asymmetric, bloom-drift) y seguimos."
+> "¿Querés que abordemos los findings uno por uno? Empiezo por los más impactantes (broken-link, edge-asymmetric) y seguimos."
 
 ---
 
@@ -179,7 +170,6 @@ Resumen final:
 ## Reglas de calidad
 
 - **Read-only por default**: el lint nunca modifica archivos sin confirmación explícita del usuario por cada finding.
-- **Conservador con bloom**: si hay drift entre wiki y subjects, la wiki gana pero **siempre confirmar** antes de modificar `subjects/[materia]/index.md`.
 - **No spam**: si el wiki tiene 50 findings, agrupar por tipo y procesar tipo-por-tipo. No abrumar.
 
 ---

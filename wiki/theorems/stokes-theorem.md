@@ -7,9 +7,7 @@ tags: [calculus/vector, integration, theorems]
 statement_form: "if S is a parametric surface with boundary ∂S and X is C2 then surface integral of curl equals line integral over boundary"
 requires: ["[[surface-integral]]", "[[curl]]", "[[greens-theorem]]"]
 unlocks: ["[[gauss-theorem]]"]
-bloom: 0
 sources: ["[[gonzalez-cvec-2023]]"]
-seen_in_subjects: [calculo-vectorial]
 created: 2026-06-02
 updated: 2026-06-02
 ---

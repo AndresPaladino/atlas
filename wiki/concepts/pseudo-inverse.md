@@ -6,9 +6,7 @@ areas: [linear-algebra]
 tags: [linear-algebra/matrix-decomposition, linear-algebra/linear-systems]
 requires: ["[[singular-value-decomposition]]", "[[four-fundamental-subspaces]]", "[[unitary-matrix]]"]
 unlocks: ["[[least-squares-regression]]"]
-bloom: 0
 sources: ["[[brunton-kutz-ch1]]"]
-seen_in_subjects: []
 created: 2026-06-02
 updated: 2026-06-02
 ---

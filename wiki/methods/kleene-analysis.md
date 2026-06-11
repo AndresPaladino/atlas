@@ -6,11 +6,9 @@ areas: [computing]
 tags: [formal-languages, automata, regular-languages]
 requires: ["[[finite-automaton]]", "[[regular-expression]]", "[[arden-lemma]]"]
 unlocks: []
-bloom: 3
 when_to_use: "Para extraer la expresión regular reconocida por un autómata finito (AFD o AFND). Se plantea un sistema de ecuaciones desde las transiciones salientes de cada estado y se resuelve usando el lema de Arden."
 fails_when: "No falla en términos de existencia (todo autómata finito reconoce un lenguaje regular), pero el sistema puede volverse pesado si el autómata tiene muchos estados con interconexiones densas — se recomienda primero minimizar."
 sources: []
-seen_in_subjects: [teoria-lenguajes]
 created: 2026-06-02
 updated: 2026-06-02
 ---

@@ -6,9 +6,7 @@ areas: [linear-algebra, numerical-analysis]
 tags: [linear-algebra/numerical, numerical-analysis]
 requires: ["[[singular-values]]"]
 unlocks: []
-bloom: 0
 sources: ["[[brunton-kutz-ch1]]"]
-seen_in_subjects: []
 created: 2026-06-02
 updated: 2026-06-02
 ---

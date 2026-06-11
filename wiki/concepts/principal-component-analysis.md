@@ -6,9 +6,7 @@ areas: [linear-algebra, statistics, data-science]
 tags: [data-science/dimensionality-reduction, statistics/multivariate]
 requires: ["[[singular-value-decomposition]]", "[[covariance-matrix]]"]
 unlocks: []
-bloom: 0
 sources: ["[[brunton-kutz-ch1]]"]
-seen_in_subjects: []
 created: 2026-06-02
 updated: 2026-06-02
 ---

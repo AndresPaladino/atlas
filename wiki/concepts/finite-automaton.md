@@ -6,9 +6,7 @@ areas: [computing]
 tags: [formal-languages, automata, regular-languages]
 requires: []
 unlocks: ["[[kleene-analysis]]"]
-bloom: 2
 sources: []
-seen_in_subjects: [teoria-lenguajes]
 created: 2026-06-02
 updated: 2026-06-02
 ---

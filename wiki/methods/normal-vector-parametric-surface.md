@@ -16,11 +16,8 @@ unlocks:
   - "[[surface-integral]]"
 when_to_use: 'Cuando se necesita el vector normal unitario a una superficie en un punto dado su parametrización $\Phi(u,v)$.'
 fails_when: 'El punto no es regular, es decir $\Phi_u \wedge \Phi_v = \mathbf{0}$; no existe plano tangente definido.'
-bloom: 0
 sources:
   - "[[gonzalez-cvec-2023]]"
-seen_in_subjects:
-  - calculo-vectorial
 created: 2026-06-02
 updated: 2026-06-02
 ---

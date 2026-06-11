@@ -1,11 +1,11 @@
 ---
 type: schema
-updated: 2026-06-02
+updated: 2026-06-10
 ---
 
 # Protocolo: modo `/practice`
 
-Sesión Socrática estricta. El agente guía el razonamiento del estudiante sin filtrar la solución, ni desde su propio conocimiento ni desde el wiki.
+Sesión Socrática estricta. El agente guía el razonamiento del usuario sin filtrar la solución, ni desde su propio conocimiento ni desde el wiki.
 
 Formato de salida (matemática incluida): seguir `schema/output-conventions.md` — mate en `$…$` / `$$…$$`, nunca `\(…\)`.
 
@@ -15,7 +15,7 @@ Formato de salida (matemática incluida): seguir `schema/output-conventions.md` 
 
 Estas reglas son el contrato del modo. Son una restitución textual del comportamiento que el sistema mantuvo desde su origen.
 
-- **Nunca dar la solución directa.** El estudiante tipea sus pasos; el agente evalúa y da una pista si está trabado.
+- **Nunca dar la solución directa.** El usuario tipea sus pasos; el agente evalúa y da una pista si está trabado.
 - Si el paso está bien → confirmar y preguntar qué sigue.
 - Si el paso está mal → señalar el error con una pregunta que lo lleve a corregirlo solo.
 - Si está completamente perdido → dar la pista mínima necesaria, no el camino completo.
@@ -29,7 +29,7 @@ Estas reglas son el contrato del modo. Son una restitución textual del comporta
 ### Idioma
 
 - Español. Términos técnicos en inglés son aceptables.
-- Tono directo, sin condescendencia. El estudiante es par, no novato.
+- Tono directo, sin condescendencia. El usuario es par, no novato.
 
 ---
 
@@ -47,9 +47,7 @@ Operaciones **permitidas** durante `/practice`:
 
 - Leer `wiki/areas/*.md` (mapas de área de alto nivel, sin contenido pedagógico).
 - Listar nombres de archivo vía `Glob` u operación equivalente (sin abrir contenido).
-- Leer páginas wiki de temas **distintos a T** (para conectar con conocimiento previo del estudiante).
-- Leer `subjects/[materia]/index.md` (para conocer Bloom previo y log).
-- Leer `profile/student_profile.md`.
+- Leer páginas wiki de temas **distintos a T** (para conectar con conocimiento previo).
 - Leer `schema/practice-protocol.md` (este archivo).
 
 ### Identificación de T
@@ -68,9 +66,9 @@ Esto hace el firewall observable. Si el usuario quiere verificar, los slugs est�
 
 ### Salida del modo
 
-El estudiante puede salir del modo en cualquier momento con `/query` o frases equivalentes (ver `schema/modes.md`). El agente debe anunciar el cambio y partir de ese momento puede leer las páginas que antes estaban bloqueadas.
+El usuario puede salir del modo en cualquier momento con `/query` o frases equivalentes (ver `schema/modes.md`). El agente debe anunciar el cambio y partir de ese momento puede leer las páginas que antes estaban bloqueadas.
 
-Si el estudiante pide "la solución" sin salir del modo, la respuesta es: "estás en `/practice`. Si querés que te explique, salí con `/query`. Si querés intentar otro paso, decime qué se te ocurre."
+Si el usuario pide "la solución" sin salir del modo, la respuesta es: "estás en `/practice`. Si querés que te explique, salí con `/query`. Si querés intentar otro paso, decime qué se te ocurre."
 
 ---
 
@@ -78,74 +76,40 @@ Si el estudiante pide "la solución" sin salir del modo, la respuesta es: "está
 
 1. Identificar tema **T** (ver "Identificación de T").
 2. Anunciar `[modo: practice]` + T + slugs bloqueados.
-3. Leer `subjects/[materia]/index.md` para conocer:
-   - Bloom previo del tema.
-   - Última sesión sobre el tema (si existe).
-   - Conceptos relacionados que el estudiante "entiende" o "tiene dudas".
-4. Preguntar al estudiante: "¿desde dónde arrancamos?" o "¿qué intentaste hasta ahora?".
+3. Preguntar al usuario: "¿desde dónde arrancamos?" o "¿qué intentaste hasta ahora?".
 
 ---
 
 ## Durante la sesión
 
-- Esperar input del estudiante: un paso, una pregunta, un "estoy trabado".
+- Esperar input del usuario: un paso, una pregunta, un "estoy trabado".
 - Aplicar reglas Socráticas a cada turn.
 - No anticipar pasos: solo evaluar el actual.
-- Si el estudiante invoca un teorema o método: pedir que lo enuncie / lo aplique él, no enunciarlo en su lugar.
-- Si el estudiante pide pista: dar la pista mínima.
-- Si el estudiante usa notación distinta a la del curso (ver `subjects/[materia]/index.md` sección "Notación del curso"): aceptar pero notar suavemente.
+- Si el usuario invoca un teorema o método: pedir que lo enuncie / lo aplique él, no enunciarlo en su lugar.
+- Si el usuario pide pista: dar la pista mínima.
 
 ---
 
 ## Cierre de sesión
 
-Disparado por: el estudiante dice "terminamos", "cerramos sesión", "listo por hoy", o equivalente.
+Disparado por: el usuario dice "terminamos", "cerramos sesión", "listo por hoy", o equivalente.
 
-Pasos del cierre (todos automáticos):
+Pasos del cierre:
 
-### 1. Actualizar `subjects/[materia]/index.md`
-
-- Append en tabla "Sesiones con Claude":
-  ```
-  | YYYY-MM-DD | <ejercicios/temas trabajados, breve> | <qué quedó claro, qué quedó pendiente> |
-  ```
-- Si hay nuevos conceptos "entendidos" → mover/agregar a "Entiendo".
-- Si hay nuevas dudas → agregar a "Tengo dudas".
-- Actualizar `updated:` en el frontmatter.
-
-### 2. Actualizar `bloom:` de páginas wiki tocadas
-
-Para cada página wiki cuyo tema fue trabajado en la sesión:
-
-- Si el estudiante demostró un nivel mayor que el `bloom:` registrado → subir el campo.
-- Si demostró un nivel menor (ej: resolvió con guía intensa lo que antes resolvía solo) → bajar.
-- Si no hubo evidencia clara → no tocar.
-
-**Criterios de nivel** (ver tabla en `CLAUDE.md`):
-- 1 (Inicial): reconoce el concepto, no lo aplica solo.
-- 2 (Comprensión): explica con sus palabras.
-- 3 (Aplicación): resuelve ejercicios tipo con guía.
-- 4 (Análisis): identifica qué herramienta usar sin que se lo digan.
-- 5 (Síntesis): combina conceptos para resolver problemas nuevos.
-- 6 (Evaluación): puede enseñarlo y detectar errores en soluciones ajenas.
-
-Actualizar `updated:` en cada página wiki tocada.
-
-### 3. Append a `wiki/log.md`
+### 1. Append a `wiki/log.md`
 
 Una entrada por sesión:
 
 ```markdown
 ## [YYYY-MM-DD] practice | <T>
 
-- Materia: <slug>
-- Páginas wiki tocadas: [[slug-1]] (bloom 2→3), [[slug-2]] (sin cambio)
+- Páginas wiki consultadas (distintas a T): [[slug-1]], [[slug-2]]
 - Pendiente: <breve>
 ```
 
-### 4. Resumen al usuario
+### 2. Resumen al usuario
 
-Una línea final: "Sesión registrada en `subjects/<materia>/index.md` y `wiki/log.md`. Bloom actualizado: ⟨lista⟩."
+Una línea final: "Sesión registrada en `wiki/log.md`."
 
 ---
 

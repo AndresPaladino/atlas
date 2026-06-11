@@ -6,10 +6,8 @@ areas: [math]
 tags: [calculus/vector, differentiation, implicit-functions]
 requires: ["[[jacobian]]"]
 unlocks: []
-bloom: 2
 statement_form: "Si F es C^1 en un entorno de (a,b), F(a,b)=0, y la Jacobiana parcial respecto a las variables y es invertible en (a,b), entonces existe una función implícita y=φ(x) C^1 en un entorno de a tal que F(x,φ(x))=0."
 sources: []
-seen_in_subjects: [calculo-vectorial]
 created: 2026-06-02
 updated: 2026-06-02
 ---

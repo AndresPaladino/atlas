@@ -26,9 +26,9 @@ wiki/
 
 1. Abrir Atlas como vault.
 2. Habilitar plugins: **Dataview** (proyecciones), **Templater** opcional.
-3. Graph view: filtrar por `path:wiki` para ver solo el grafo conceptual sin `subjects/`.
+3. Graph view: filtrar por `path:wiki` para ver el grafo conceptual.
 
-Los bloques Dataview en `index.md`, `areas/*.md` y en las secciones "Conceptos wiki" de cada `subjects/[materia]/index.md` se renderizan automáticamente.
+Los bloques Dataview en `index.md` y `areas/*.md` se renderizan automáticamente.
 
 ## En cualquier editor
 

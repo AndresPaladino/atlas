@@ -12,10 +12,10 @@ updated: 2026-06-02
 ## Conceptos
 
 ```dataview
-TABLE bloom, tags
+TABLE tags
 FROM "wiki/concepts"
 WHERE contains(areas, "computing")
-SORT bloom DESC, file.name ASC
+SORT file.name ASC
 ```
 
 ### Fallback manual
@@ -29,10 +29,10 @@ SORT bloom DESC, file.name ASC
 ## Teoremas
 
 ```dataview
-TABLE bloom, statement_form
+TABLE statement_form
 FROM "wiki/theorems"
 WHERE contains(areas, "computing")
-SORT bloom DESC
+SORT file.name ASC
 ```
 
 ### Fallback manual
@@ -41,10 +41,10 @@ SORT bloom DESC
 ## Métodos
 
 ```dataview
-TABLE bloom, when_to_use
+TABLE when_to_use
 FROM "wiki/methods"
 WHERE contains(areas, "computing")
-SORT bloom DESC
+SORT file.name ASC
 ```
 
 ### Fallback manual

@@ -7,15 +7,15 @@ updated: 2026-06-02
 
 # Math — MOC
 
-Área que agrupa cálculo, álgebra, análisis, geometría, lógica matemática. Incluye temas de matemática base aplicables a varias materias (cálculo vectorial, física, ML, signals).
+Área que agrupa cálculo, álgebra, análisis, geometría, lógica matemática.
 
 ## Conceptos
 
 ```dataview
-TABLE bloom, tags
+TABLE tags
 FROM "wiki/concepts"
 WHERE contains(areas, "math")
-SORT bloom DESC, file.name ASC
+SORT file.name ASC
 ```
 
 ### Fallback manual
@@ -26,10 +26,10 @@ SORT bloom DESC, file.name ASC
 ## Teoremas
 
 ```dataview
-TABLE bloom, statement_form
+TABLE statement_form
 FROM "wiki/theorems"
 WHERE contains(areas, "math")
-SORT bloom DESC
+SORT file.name ASC
 ```
 
 ### Fallback manual
@@ -38,10 +38,10 @@ SORT bloom DESC
 ## Métodos
 
 ```dataview
-TABLE bloom, when_to_use
+TABLE when_to_use
 FROM "wiki/methods"
 WHERE contains(areas, "math")
-SORT bloom DESC
+SORT file.name ASC
 ```
 
 ### Fallback manual

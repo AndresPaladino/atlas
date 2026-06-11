@@ -6,9 +6,7 @@ areas: [math]
 tags: [calculus/vector, optimization]
 requires: []
 unlocks: ["[[hessian-criterion]]"]
-bloom: 2
 sources: []
-seen_in_subjects: [calculo-vectorial]
 created: 2026-06-02
 updated: 2026-06-02
 ---

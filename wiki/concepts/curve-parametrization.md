@@ -6,10 +6,8 @@ areas: [math]
 tags: [calculus/vector, curves]
 requires: []
 unlocks: []
-bloom: 2
 sources: ["[[gonzalez-cvec-2023]]"]
 unlocks: ["[[arc-length]]", "[[line-integral]]", "[[parametric-surface]]"]
-seen_in_subjects: [calculo-vectorial]
 created: 2026-06-02
 updated: 2026-06-02
 ---

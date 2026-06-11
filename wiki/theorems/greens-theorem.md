@@ -7,9 +7,7 @@ tags: [calculus/vector, integration, theorems]
 statement_form: "if C is a simple closed curve bounding D and X is C1 on D then line integral over C equals double integral of curl over D"
 requires: ["[[line-integral]]", "[[gradient-field]]"]
 unlocks: ["[[stokes-theorem]]"]
-bloom: 0
 sources: ["[[gonzalez-cvec-2023]]"]
-seen_in_subjects: [calculo-vectorial]
 created: 2026-06-02
 updated: 2026-06-02
 ---

@@ -14,9 +14,9 @@ Punto de entrada del wiki. Lista todas las páginas activas agrupadas por tipo. 
 ## Conceptos
 
 ```dataview
-TABLE bloom, areas, file.mtime AS "Actualizado"
+TABLE areas, file.mtime AS "Actualizado"
 FROM "wiki/concepts"
-SORT bloom DESC, file.name ASC
+SORT file.name ASC
 ```
 
 ### Fallback manual
@@ -57,9 +57,9 @@ SORT bloom DESC, file.name ASC
 ## Teoremas
 
 ```dataview
-TABLE bloom, areas, statement_form
+TABLE areas, statement_form
 FROM "wiki/theorems"
-SORT bloom DESC, file.name ASC
+SORT file.name ASC
 ```
 
 ### Fallback manual
@@ -75,9 +75,9 @@ SORT bloom DESC, file.name ASC
 ## Métodos
 
 ```dataview
-TABLE bloom, areas, when_to_use
+TABLE areas, when_to_use
 FROM "wiki/methods"
-SORT bloom DESC, file.name ASC
+SORT file.name ASC
 ```
 
 ### Fallback manual

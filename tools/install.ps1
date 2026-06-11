@@ -1,12 +1,10 @@
-# atlas-local bootstrap (Windows / PowerShell)
-# Uso:  cd atlas\local ;  .\install.ps1
+# atlas bootstrap (Windows / PowerShell)
+# Uso:  cd atlas\tools ;  .\install.ps1
 #
-# Idempotente: instala uv si falta, sincroniza el entorno con el backend de
-# torch correcto (CUDA en NVIDIA, CPU si no hay GPU), avisa sobre Ollama
-# (opcional, solo captions) y corre `atlas-local doctor`.
+# Instala el comando global `atlas` via uv tool.
+# Idempotente: instala uv si falta, luego instala/reinstala atlas.
 
 $ErrorActionPreference = "Stop"
-Set-Location -Path $PSScriptRoot
 
 function Say  ($m) { Write-Host "▸ $m" -ForegroundColor Cyan }
 function Warn ($m) { Write-Host "⚠ $m" -ForegroundColor Yellow }
@@ -24,11 +22,11 @@ if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
 }
 Ok "uv $((uv --version).Split(' ')[1])"
 
-# ── 2. Sync con backend de torch automático ──────────────────────────────────
-Say "Sincronizando entorno (uv sync, torch-backend auto)…"
+# ── 2. Instalar atlas globalmente ─────────────────────────────────────────────
+Say "Instalando atlas como comando global (uv tool install)…"
 $env:UV_TORCH_BACKEND = "auto"
-uv sync --extra render
-Ok "Entorno listo en $PSScriptRoot\.venv"
+uv tool install --extra render $PSScriptRoot
+Ok "atlas instalado en PATH"
 
 # ── 3. Ollama (opcional, solo para captions de figuras) ──────────────────────
 if (Get-Command ollama -ErrorAction SilentlyContinue) {
@@ -41,7 +39,7 @@ if (Get-Command ollama -ErrorAction SilentlyContinue) {
 
 # ── 4. Doctor ─────────────────────────────────────────────────────────────────
 Say "Diagnóstico de hardware:"
-uv run atlas-local doctor
+atlas doctor
 
 Write-Host ""
-Ok "Instalación completa. Probá:  uv run atlas-local status"
+Ok "Instalación completa. Probá desde cualquier directorio:  atlas status"

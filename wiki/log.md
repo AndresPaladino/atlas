@@ -7,7 +7,7 @@ updated: 2026-06-02
 
 Append-only. Una entrada por operación que modificó el wiki (`/ingest`, `/query` con file-back, `/practice` al cierre, `/lint` con fixes). Formato: `## [YYYY-MM-DD] <op> | <descripción corta>`.
 
-El log es **concept-bound**: registra qué pasó al grafo de conocimiento. El registro **course-bound** (qué pasó en cada sesión por materia) vive en `subjects/[materia]/index.md`. Ambos se actualizan en paralelo al cerrar una sesión `/practice`.
+El log es **concept-bound**: registra qué pasó al grafo de conocimiento. Se actualiza al cerrar cada sesión de `/ingest`, `/query` (con file-back), `/practice`, o `/lint`.
 
 ---
 

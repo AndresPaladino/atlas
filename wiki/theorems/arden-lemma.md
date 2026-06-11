@@ -6,10 +6,8 @@ areas: [computing]
 tags: [formal-languages, regular-languages]
 requires: ["[[regular-expression]]"]
 unlocks: ["[[kleene-analysis]]"]
-bloom: 3
 statement_form: "Si X = rX | s (sobre expresiones regulares) y r no acepta la palabra vacía, entonces X = r*.s es la solución única."
 sources: []
-seen_in_subjects: [teoria-lenguajes]
 created: 2026-06-02
 updated: 2026-06-02
 ---

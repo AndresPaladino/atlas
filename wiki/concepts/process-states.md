@@ -6,9 +6,7 @@ areas: [computing]
 tags: [operating-systems, processes]
 requires: []
 unlocks: ["[[context-switch]]"]
-bloom: 3
 sources: []
-seen_in_subjects: [sistemas-operativos]
 created: 2026-06-02
 updated: 2026-06-02
 ---
