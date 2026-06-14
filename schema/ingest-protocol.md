@@ -183,7 +183,11 @@ Activado con `/ingest --compile`. Escanea `raw/` en busca de archivos no registr
 
 ### Paso C1 — Detectar archivos nuevos
 
-1. Listar las fuentes en `raw/` (los **`.pdf`**, más `.txt`/`.md` que no sean extracciones de un PDF homónimo).
+1. Listar las **fuentes** de `raw/`:
+   - Los **`.pdf`** (unidad primaria de una fuente).
+   - Los `.txt`/`.md` **nativos**: los que no tienen un PDF homónimo **y** no son artefactos de extracción.
+
+   **Excluir siempre los artefactos que produce `atlas extract`** — no son fuentes: el `.md` monolítico, el `<nombre>.toc.md`, y **todo** lo que viva dentro de un directorio de chunks `raw/<nombre>/`. La forma fiable de identificarlos es leer `raw/.atlas-extract.json` y descartar todo `md_path`, `toc_path` y cualquier archivo bajo un `chunks_dir`. **Un documento segmentado es una sola fuente = su `.pdf`**; sus chunks y su TOC nunca se enumeran como fuentes separadas (al ingerir esa fuente, el Paso 1 ya lee el TOC y solo los chunks relevantes).
 2. Leer los frontmatters de todos los archivos bajo `wiki/sources/` y extraer el campo `path:` de cada uno.
 3. Construir la lista de **archivos no registrados**: fuentes en `raw/` cuyo path no aparece en ningún `path:` de `wiki/sources/`.
 4. Para cada fuente nueva, chequear si existe su `.md` cacheado (mismo nombre, extensión `.md`). Si **falta**, avisar y sugerir correr la extracción local antes de ingerir (no convertir el PDF desde Claude):
