@@ -22,9 +22,13 @@ Tomar una fuente cruda (PDF, notas, libro, paper) y poblar/actualizar el wiki co
 
 ## Paso 1 — Leer y mapear
 
-- **Preferir el markdown extraído.** Si existe `raw/<mismo-nombre>.md` (lo produce `atlas extract`, ver `tools/`), leer **ese** archivo de texto en vez del PDF: trae el contenido con LaTeX y captions de figuras, y cuesta una fracción de los tokens. Solo si **no** existe el `.md`, hacer `Read` visual sobre el PDF (fallback fiel pero caro).
-- Leer la fuente completa (o pedir rango de páginas si es muy larga).
-- Construir un mapa interno: para cada sección o diapositiva, listar los conceptos / teoremas / métodos / ejemplos que aparecen.
+Elegir la fuente más barata disponible, en este orden de preferencia:
+
+1. **TOC + chunks (docs grandes).** Si existe `raw/<mismo-nombre>.toc.md` (lo produce `atlas extract` al segmentar libros/apuntes grandes, ver `tools/`), leer **primero el TOC**: es un índice compacto (árbol de headings + página + tokens estimados + qué chunk contiene cada sección). A partir del TOC se arma el mapa de conceptos **sin leer el cuerpo entero**. Para profundizar en una sección, leer **solo** el chunk correspondiente de `raw/<mismo-nombre>/` (p.ej. `raw/<nombre>/02-extremos.md`). **Nunca** leer el monolítico `raw/<nombre>.md` cuando hay TOC: anula el ahorro de tokens. Si el usuario pide un rango de páginas, mapearlo a chunks vía la columna de páginas del TOC.
+2. **Markdown monolítico (docs chicos).** Si **no** hay `.toc.md` pero sí `raw/<mismo-nombre>.md`, leerlo completo: para exámenes y papers cortos el costo es bajo y trae LaTeX + captions de figuras.
+3. **PDF visual (fallback).** Si no hay `.md`, hacer `Read` visual sobre el PDF — fiel pero caro en tokens.
+
+- Construir un mapa interno: para cada sección listar los conceptos / teoremas / métodos / ejemplos que aparecen (con el TOC, esto sale casi directo de los headings).
 - No escribir nada todavía.
 
 ---
@@ -67,6 +71,7 @@ aliases: ["<variantes>"]
 source_kind: book | paper | notes | lecture
 path: "raw/<nombre-de-archivo>"   # ruta relativa al repo, sin subcarpetas (siempre el .pdf, fuente inmutable)
 extracted: "raw/<nombre-de-archivo>.md"  # opcional: markdown cacheado leído en el ingest (atlas extract)
+toc: "raw/<nombre-de-archivo>.toc.md"    # opcional: índice de segmentación, si el doc se segmentó
 pages: "1-24"                     # rango cubierto, opcional
 areas: [math, signals]
 tags: [calculus/vector]
@@ -82,6 +87,8 @@ Cuerpo:
 
 ```markdown
 ## Mapa de coverage
+
+Si el doc tiene `raw/<nombre>.toc.md`, esta tabla se deriva casi directo de él: cada fila del TOC (sección + página) ya trae el heading; basta anotar el concepto wiki que le corresponde y, opcionalmente, el chunk donde vive.
 
 | Sección / diapositiva | Página | Concepto wiki |
 |---|---|---|

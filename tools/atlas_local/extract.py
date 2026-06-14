@@ -63,9 +63,10 @@ def _png_bytes(image) -> bytes:
 class Extractor:
     """Convierte PDFs según el tier. Carga modelos de marker una sola vez (batch)."""
 
-    def __init__(self, tier: Tier, device: Device):
+    def __init__(self, tier: Tier, device: Device, cache_dir: "Path | None" = None):
         self.tier = tier
         self.device = device
+        self.cache_dir = cache_dir
         self._converter = None  # marker, perezoso
 
     # ── marker ────────────────────────────────────────────────────────────────
@@ -73,6 +74,16 @@ class Extractor:
         if self._converter is None:
             # marker lee el device de la env var TORCH_DEVICE.
             os.environ.setdefault("TORCH_DEVICE", self.device.kind)
+
+            # Redirigir la caché de modelos HuggingFace y torch a cache_dir
+            # para evitar llenar C:\Users\..\.cache en Windows (los modelos
+            # de marker pesan ~8 GB y van ahí por defecto).
+            if self.cache_dir is not None:
+                cache_str = str(self.cache_dir)
+                os.environ.setdefault("HF_HOME", cache_str)
+                os.environ.setdefault("HUGGINGFACE_HUB_CACHE", str(self.cache_dir / "hub"))
+                os.environ.setdefault("TORCH_HOME", str(self.cache_dir / "torch"))
+
             from marker.converters.pdf import PdfConverter
             from marker.models import create_model_dict
 
@@ -80,9 +91,13 @@ class Extractor:
             # fork() después de inicializar CUDA crashea el kernel de WSL2
             # (y es inestable en general con CUDA). Los propios scripts de
             # servidor de marker fijan este mismo valor por la misma razón.
+            #
+            # paginate_output inserta separadores de página ("{N}----…") en el
+            # markdown; la segmentación los usa para mapear cada sección a su
+            # rango de páginas en el TOC. Es inocuo para el render y el ingest.
             self._converter = PdfConverter(
                 artifact_dict=create_model_dict(),
-                config={"pdftext_workers": 1},
+                config={"pdftext_workers": 1, "paginate_output": True},
             )
         return self._converter
 

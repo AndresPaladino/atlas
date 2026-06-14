@@ -34,6 +34,9 @@ class Entry:
     md_path: str          # relativo a raw/
     n_pages: int = 0
     n_figs: int = 0
+    toc_path: str | None = None     # relativo a raw/, si se segmentó
+    chunks_dir: str | None = None   # relativo a raw/, si se segmentó
+    n_chunks: int = 0
 
 
 def sha256_file(path: Path) -> str:
@@ -95,7 +98,8 @@ class Manifest:
     # ── mutación ─────────────────────────────────────────────────────────────
     def record(self, pdf: Path, *, md_path: Path, extractor: str,
                extractor_version: str, device: str, n_pages: int = 0,
-               n_figs: int = 0) -> Entry:
+               n_figs: int = 0, toc_path: "Path | None" = None,
+               chunks_dir: "Path | None" = None, n_chunks: int = 0) -> Entry:
         entry = Entry(
             sha256=sha256_file(pdf),
             extractor=extractor,
@@ -105,6 +109,9 @@ class Manifest:
             md_path=md_path.relative_to(self.raw_dir).as_posix(),
             n_pages=n_pages,
             n_figs=n_figs,
+            toc_path=toc_path.relative_to(self.raw_dir).as_posix() if toc_path else None,
+            chunks_dir=chunks_dir.relative_to(self.raw_dir).as_posix() if chunks_dir else None,
+            n_chunks=n_chunks,
         )
         self._entries[self._key(pdf)] = entry
         return entry
