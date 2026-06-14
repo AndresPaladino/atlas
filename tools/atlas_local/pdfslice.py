@@ -17,10 +17,58 @@ import subprocess
 import sys
 from pathlib import Path
 
-try:
-    import fitz  # PyMuPDF
-except ImportError:
-    sys.exit("Error: PyMuPDF no está instalado. Ejecuta: pip3 install pymupdf")
+
+def _fitz():
+    """Importa PyMuPDF perezosamente para que importar este módulo sea barato."""
+    try:
+        import fitz  # PyMuPDF
+    except ImportError as exc:  # pragma: no cover - depende del entorno
+        raise RuntimeError(
+            "PyMuPDF no está instalado. Ejecutá: pip3 install pymupdf"
+        ) from exc
+    return fitz
+
+
+def page_count(pdf: Path) -> int:
+    """Cantidad de páginas de un PDF."""
+    doc = _fitz().open(str(pdf))
+    try:
+        return doc.page_count
+    finally:
+        doc.close()
+
+
+def slice_pdf(src: Path, start: int, end: int, out: "Path | None" = None) -> Path:
+    """Recorta ``src`` a las páginas [start, end] (base 1, inclusive).
+
+    ``insert_pdf`` copia solo los recursos usados por las páginas seleccionadas,
+    así el recorte no hereda el peso completo del original. Devuelve la ruta de
+    salida (junto al original si ``out`` es None).
+    """
+    src = Path(src)
+    fitz = _fitz()
+    doc = fitz.open(str(src))
+    try:
+        total = doc.page_count
+        if start < 1:
+            raise ValueError(f"la página de inicio debe ser ≥ 1 (recibido: {start})")
+        if start > total:
+            raise ValueError(f"la página de inicio ({start}) supera el total ({total})")
+        end = min(end, total)
+        if end < start:
+            raise ValueError(f"la página final ({end}) es menor que la de inicio ({start})")
+        if out is None:
+            out = default_output_path(src, start, end)
+        out = Path(out)
+        new = fitz.open()
+        try:
+            new.insert_pdf(doc, from_page=start - 1, to_page=end - 1)
+            new.save(str(out), garbage=4, deflate=True)
+        finally:
+            new.close()
+        return out
+    finally:
+        doc.close()
 
 
 def parse_args():
@@ -60,38 +108,25 @@ def main():
     if not input_path.suffix.lower() == ".pdf":
         sys.exit(f"Error: el archivo no tiene extensión .pdf")
 
-    doc = fitz.open(str(input_path))
-    total_pages = doc.page_count
+    total_pages = page_count(input_path)
 
     start = args.start
     end = args.end if args.end is not None else total_pages
 
-    # Validaciones
-    if start < 1:
-        sys.exit(f"Error: la página de inicio debe ser ≥ 1 (recibido: {start})")
-    if end < start:
-        sys.exit(f"Error: la página final ({end}) no puede ser menor que la de inicio ({start})")
-    if start > total_pages:
-        sys.exit(f"Error: la página de inicio ({start}) supera el total de páginas del documento ({total_pages})")
     if end > total_pages:
         print(f"Aviso: la página final ({end}) supera el total ({total_pages}). Se usará {total_pages}.")
         end = total_pages
 
-    # Determinar ruta de salida
-    if args.output:
-        output_path = Path(args.output).expanduser().resolve()
-    else:
-        output_path = default_output_path(input_path, start, end)
+    output_path = (
+        Path(args.output).expanduser().resolve() if args.output else None
+    )
 
-    # Extraer páginas en un documento nuevo (PyMuPDF usa índices 0-based).
-    # insert_pdf copia solo los recursos usados por las páginas seleccionadas,
-    # evitando que el output herede el peso completo del original.
-    out = fitz.open()
-    out.insert_pdf(doc, from_page=start - 1, to_page=end - 1)
-    out.save(str(output_path), garbage=4, deflate=True)
-    out.close()
-    doc.close()
+    try:
+        output_path = slice_pdf(input_path, start, end, output_path)
+    except ValueError as exc:
+        sys.exit(f"Error: {exc}")
 
+    end = min(end, total_pages)
     print(f"✓ {total_pages} págs. → recorte p{start}–p{end} ({end - start + 1} págs.)")
     print(f"  {output_path}")
 

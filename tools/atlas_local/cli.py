@@ -230,6 +230,7 @@ def extract(
     cache: Optional[Path] = typer.Option(None, "--cache", help="Directorio para caché de modelos (default: misma unidad que raw/, o $ATLAS_CACHE)."),
     segment: Optional[bool] = typer.Option(None, "--segment/--no-segment", help="Forzar/inhibir la segmentación en chunks+TOC (default: auto por umbral de tamaño)."),
     chunk_tokens: int = typer.Option(seg_mod.DEFAULT_TARGET_TOKENS, "--chunk-tokens", help="Tamaño objetivo de cada chunk en tokens estimados."),
+    batch_pages: int = typer.Option(40, "--batch-pages", help="PDFs con más páginas que esto se extraen por lotes (acota la memoria). 0 = desactivar."),
 ) -> None:
     """Convierte PDFs de raw/ a markdown (sibling .md) y actualiza el manifest."""
     from .extract import Extractor  # import perezoso (arrastra torch/marker)
@@ -277,7 +278,11 @@ def extract(
         rel = pdf.relative_to(raw_dir).as_posix() if raw_dir in pdf.parents or pdf.parent == raw_dir else pdf.name
         try:
             console.print(f"▸ {rel} …", end=" ")
-            result = extractor.extract(pdf)
+
+            def _on_batch(start: int, end: int, total: int) -> None:
+                console.print(f"\n  [dim]lote p{start}-p{end}/{total} …[/dim]", end=" ")
+
+            result = extractor.extract(pdf, batch_pages=batch_pages, on_progress=_on_batch)
 
             if do_captions and result.images:
                 from .caption import caption_images, inline_captions
