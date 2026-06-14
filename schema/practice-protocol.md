@@ -35,7 +35,19 @@ Estas reglas son el contrato del modo. Son una restitución textual del comporta
 
 ## Firewall — el invariante crítico
 
-Durante una sesión `/practice` sobre tema **T**, el agente **no debe leer**:
+**Enforcement real (no honor system).** Al abrir la sesión, el agente corre
+`atlas session set "<T>"`: esto persiste el estado en `.atlas/session.json` y
+calcula los slugs bloqueados desde el grafo (la página de **T** *más* su
+vecindario `requires`/`unlocks` — un prerrequisito ya no queda legible y filtra
+estructura). Un hook `PreToolUse` (`.claude/hooks/firewall_read.py`) intercepta
+cada `Read` y **deniega** los archivos bloqueados: el firewall no depende de que
+el modelo obedezca, y sobrevive a la compactación de contexto.
+
+Válvula de escape deliberada: `/reveal` (`atlas session reveal`) abre el firewall
+para una lectura puntual (cálculo/procedimiento) y queda registrado; `/query`
+cambia de modo y lo levanta del todo (`atlas session mode query`).
+
+Conceptualmente, durante una sesión sobre tema **T** el agente **no debe leer**:
 
 - `wiki/concepts/<*>.md` cuyo frontmatter tenga **T** en `aliases:` o `tags:`.
 - `wiki/theorems/<*>.md` con **T** en `aliases:` o `tags:`.
@@ -75,8 +87,9 @@ Si el usuario pide "la solución" sin salir del modo, la respuesta es: "estás e
 ## Apertura de sesión
 
 1. Identificar tema **T** (ver "Identificación de T").
-2. Anunciar `[modo: practice]` + T + slugs bloqueados.
-3. Preguntar al usuario: "¿desde dónde arrancamos?" o "¿qué intentaste hasta ahora?".
+2. Correr `atlas session set "<T>"` — fija el estado y arma el firewall por hook.
+3. Anunciar `[modo: practice]` + T + slugs bloqueados (los reporta el comando).
+4. Preguntar al usuario: "¿desde dónde arrancamos?" o "¿qué intentaste hasta ahora?".
 
 ---
 
@@ -96,20 +109,15 @@ Disparado por: el usuario dice "terminamos", "cerramos sesión", "listo por hoy"
 
 Pasos del cierre:
 
-### 1. Append a `wiki/log.md`
+### 1. Bajar el firewall
 
-Una entrada por sesión:
-
-```markdown
-## [YYYY-MM-DD] practice | <T>
-
-- Páginas wiki consultadas (distintas a T): [[slug-1]], [[slug-2]]
-- Pendiente: <breve>
-```
+Correr `atlas session clear` (vuelve a modo query, sin bloqueos).
 
 ### 2. Resumen al usuario
 
-Una línea final: "Sesión registrada en `wiki/log.md`."
+Una línea final. Si la sesión produjo material que valga archivar, sugerir un
+commit `practice: <T> — <breve>` (el log se deriva de git; no se edita
+`wiki/log.md`). Si no, simplemente cerrar.
 
 ---
 

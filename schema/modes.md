@@ -52,20 +52,14 @@ El agente debe **anunciar el cambio**: `"[modo: query]"` cuando el cambio se efe
 
 ## El firewall — invariante estructural
 
-Durante una sesión `/practice` sobre tema **T**, el agente **no debe leer** archivos de `wiki/concepts/`, `wiki/theorems/`, `wiki/methods/`, `wiki/examples/` cuyos `aliases:` o `tags:` del frontmatter contengan **T**.
+Durante una sesión `/practice` sobre tema **T**, el agente no puede leer las
+páginas wiki sobre T (ni su vecindario en el grafo) ni `raw/`. No es honor system:
+está **enforced por un hook `PreToolUse`** que lee el estado de sesión
+(`.atlas/session.json`, fijado con `atlas session set "<T>"`) y deniega los `Read`
+bloqueados. Válvula de escape deliberada: `/reveal` (lectura puntual, logueada) o
+`/query` (cambia de modo y lo levanta).
 
-Operaciones permitidas durante `/practice`:
-- Leer `wiki/areas/*.md` (mapas de área sin contenido pedagógico).
-- Listar nombres de archivo vía `Glob` o equivalente (sin abrir contenido).
-- Leer páginas wiki de **temas distintos a T** (para conectar con conocimiento previo).
-
-Operaciones prohibidas durante `/practice`:
-- Leer páginas wiki cuyo tag o alias matchee **T**.
-- Leer `raw/` directamente.
-
-El firewall se aplica a **toda la sesión** hasta cambio de modo explícito. No hay excepción "rápida" — si el usuario pide la solución, el agente responde "tipeá tu próximo paso" o sugiere `/query` para salir.
-
-Detalle completo y rationale: `schema/practice-protocol.md`.
+Definición completa, vecindario del grafo y rationale: `schema/practice-protocol.md`.
 
 ---
 

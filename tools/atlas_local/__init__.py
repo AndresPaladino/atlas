@@ -5,4 +5,4 @@ la GPU disponible (CUDA / Apple MPS / CPU). Claude consume el ``.md`` cacheado
 en vez de la imagen de cada página, ahorrando tokens sin perder fidelidad.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.3.0"
