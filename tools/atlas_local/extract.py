@@ -91,9 +91,13 @@ class Extractor:
             # fork() después de inicializar CUDA crashea el kernel de WSL2
             # (y es inestable en general con CUDA). Los propios scripts de
             # servidor de marker fijan este mismo valor por la misma razón.
+            #
+            # paginate_output inserta separadores de página ("{N}----…") en el
+            # markdown; la segmentación los usa para mapear cada sección a su
+            # rango de páginas en el TOC. Es inocuo para el render y el ingest.
             self._converter = PdfConverter(
                 artifact_dict=create_model_dict(),
-                config={"pdftext_workers": 1},
+                config={"pdftext_workers": 1, "paginate_output": True},
             )
         return self._converter
 

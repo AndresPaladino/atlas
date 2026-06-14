@@ -11,9 +11,68 @@ from rich.console import Console
 from rich.table import Table
 
 from . import __version__
+from . import segment as seg_mod  # lógica pura, sin torch
 from .config import resolve_tier
 from .device import detect_device, ollama_available
 from .manifest import Manifest, Status
+
+# Tamaño aproximado de los modelos de marker al descargar por primera vez.
+_MARKER_MODELS_GB = 8.5
+
+
+def _resolve_cache_dir(raw_dir: Path) -> Path:
+    """Directorio de caché de modelos HF/torch.
+
+    Orden: ATLAS_CACHE env var → misma unidad que raw/ → ~/.atlas-cache.
+    Poner la caché en la misma unidad que raw/ evita llenar C: en Windows.
+    """
+    env = os.environ.get("ATLAS_CACHE")
+    if env:
+        return Path(env).expanduser().resolve()
+    # raw_dir es atlas/raw/, su padre es la raíz del proyecto.
+    return raw_dir.parent / ".atlas-cache"
+
+
+def _preflight(targets: list[Path], cache_dir: Path, raw_dir: Path) -> None:
+    """Advierte si el espacio en disco o la RAM disponible son ajustados."""
+    import shutil
+
+    warnings_found = []
+
+    # ── Disco en cache_dir (modelos ~8.5 GB en primera descarga) ─────────────
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        du = shutil.disk_usage(cache_dir)
+        free_gb = du.free / 1024**3
+        hf_hub = cache_dir / "hub"
+        already_cached = hf_hub.exists() and any(hf_hub.iterdir())
+        if not already_cached and free_gb < _MARKER_MODELS_GB + 2:
+            warnings_found.append(
+                f"[yellow]⚠  Disco en {cache_dir.drive or str(cache_dir)}: "
+                f"{free_gb:.1f} GB libres — primera descarga de modelos ocupa "
+                f"~{_MARKER_MODELS_GB:.0f} GB. Puede quedarse sin espacio.[/yellow]"
+            )
+    except OSError:
+        pass
+
+    # ── RAM disponible (marker necesita ~6–8 GB) ──────────────────────────────
+    try:
+        import psutil  # dep transitiva de varios paquetes del entorno
+
+        free_ram_gb = psutil.virtual_memory().available / 1024**3
+        if free_ram_gb < 6:
+            warnings_found.append(
+                f"[yellow]⚠  RAM disponible: {free_ram_gb:.1f} GB — "
+                f"marker carga modelos que ocupan ~6–8 GB. "
+                f"Puede quedarse sin memoria.[/yellow]"
+            )
+    except ImportError:
+        pass  # psutil no instalado: saltear el chequeo de RAM
+
+    for w in warnings_found:
+        console.print(w)
+    if warnings_found:
+        console.print()
 
 app = typer.Typer(
     add_completion=False,
@@ -107,11 +166,21 @@ def _git_push(raw_dir: Path, extracted_pdfs: list[Path]) -> None:
     md_files = [str(p.with_suffix(".md").relative_to(repo_root)) for p in extracted_pdfs]
     manifest_rel = str((raw_dir / ".atlas-extract.json").relative_to(repo_root))
 
+    # Artefactos de segmentación (cuando el doc se segmentó): TOC + dir de chunks.
+    seg_files: list[str] = []
+    for p in extracted_pdfs:
+        toc = p.with_suffix(".toc.md")
+        chunks_dir = p.with_suffix("")
+        if toc.exists():
+            seg_files.append(str(toc.relative_to(repo_root)))
+        if chunks_dir.is_dir():
+            seg_files.append(str(chunks_dir.relative_to(repo_root)))
+
     def run(cmd: list[str]) -> subprocess.CompletedProcess:
         return subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True)
 
     console.print("\n[cyan]▸ git add …[/cyan]")
-    r = run(["git", "add"] + md_files + [manifest_rel])
+    r = run(["git", "add"] + md_files + seg_files + [manifest_rel])
     if r.returncode != 0:
         console.print(f"[red]git add falló:[/red] {r.stderr.strip()}")
         return
@@ -144,6 +213,9 @@ def extract(
     captions: bool = typer.Option(False, "--captions", help="Generar captions de figuras (requiere Ollama)."),
     force: bool = typer.Option(False, "--force", help="Re-extraer aunque ya esté converted."),
     push: bool = typer.Option(False, "--push", help="Commit y push de los .md y manifest al terminar."),
+    cache: Optional[Path] = typer.Option(None, "--cache", help="Directorio para caché de modelos (default: misma unidad que raw/, o $ATLAS_CACHE)."),
+    segment: Optional[bool] = typer.Option(None, "--segment/--no-segment", help="Forzar/inhibir la segmentación en chunks+TOC (default: auto por umbral de tamaño)."),
+    chunk_tokens: int = typer.Option(seg_mod.DEFAULT_TARGET_TOKENS, "--chunk-tokens", help="Tamaño objetivo de cada chunk en tokens estimados."),
 ) -> None:
     """Convierte PDFs de raw/ a markdown (sibling .md) y actualiza el manifest."""
     from .extract import Extractor  # import perezoso (arrastra torch/marker)
@@ -152,6 +224,8 @@ def extract(
     if not raw_dir.is_dir():
         console.print(f"[red]No existe el directorio raw/: {raw_dir}[/red]")
         raise typer.Exit(1)
+
+    cache_dir = cache.expanduser().resolve() if cache else _resolve_cache_dir(raw_dir)
 
     device = detect_device()
     tier = resolve_tier(device)
@@ -175,11 +249,14 @@ def extract(
     if captions and not do_captions:
         console.print("[yellow]--captions ignorado: el tier no lo soporta o falta Ollama.[/yellow]")
 
+    _preflight(targets, cache_dir, raw_dir)
+
     console.print(f"[cyan]Device:[/cyan] {device.label}  ·  [cyan]Tier:[/cyan] {tier.name}  ·  "
                   f"[cyan]Captions:[/cyan] {'sí' if do_captions else 'no'}")
+    console.print(f"[cyan]Caché modelos:[/cyan] {cache_dir}")
     console.print(f"[cyan]A extraer:[/cyan] {len(targets)} PDF(s)\n")
 
-    extractor = Extractor(tier, device)
+    extractor = Extractor(tier, device, cache_dir=cache_dir)
     ok = 0
     extracted = []
     for pdf in targets:
@@ -205,14 +282,31 @@ def extract(
             for name, data in result.images.items():
                 (pdf.parent / name).write_bytes(data)
 
+            # Segmentación: docs grandes → chunks + TOC para ingest selectivo.
+            seg = None
+            total_tokens = seg_mod.token_est(result.markdown)
+            want_segment = segment if segment is not None else seg_mod.should_segment(
+                result.n_pages, total_tokens
+            )
+            if want_segment:
+                seg = seg_mod.segment_markdown(
+                    result.markdown, md_path=md_path,
+                    source_rel=rel, n_pages=result.n_pages,
+                    target_tokens=chunk_tokens,
+                )
+
             manifest.record(
                 pdf, md_path=md_path, extractor=result.extractor,
                 extractor_version=result.extractor_version, device=device.kind,
                 n_pages=result.n_pages, n_figs=result.n_figs,
+                toc_path=seg.toc_path if seg else None,
+                chunks_dir=seg.chunks_dir if seg else None,
+                n_chunks=seg.n_chunks if seg else 0,
             )
             ok += 1
             extracted.append(pdf)
-            console.print(f"[green]✓[/green] {result.n_pages}p / {result.n_figs} figs")
+            seg_note = f" · {seg.n_chunks} chunks" if seg else ""
+            console.print(f"[green]✓[/green] {result.n_pages}p / {result.n_figs} figs{seg_note}")
         except Exception as exc:  # noqa: BLE001 — un PDF roto no debe frenar el batch
             console.print(f"[red]✗ {exc}[/red]")
 
