@@ -83,15 +83,10 @@ Recomendar el tipo según contenido:
 2. Crear `wiki/<tipo>/<slug>.md` siguiendo `schema/wiki-conventions.md`.
 3. Frontmatter completo: `type`, `title`, `aliases`, `areas`, `tags`, `requires`, `unlocks`, `sources` (todas las fuentes citadas en la respuesta), `created`, `updated`.
 4. Cuerpo: el desarrollo de la respuesta, limpio. Eliminar el "respuesta corta" si suena conversacional; conservar las conexiones.
-5. Actualizar `wiki/index.md` (append a la sección correspondiente).
-6. Si el tipo es `comparison`: agregar la página al `wiki/areas/<area>.md` correspondiente si Dataview no lo hace solo.
-7. Append a `wiki/log.md`:
-   ```markdown
-   ## [YYYY-MM-DD] query | <pregunta corta>
-
-   - Página creada: [[<slug>]]
-   - Fuentes citadas: [[a]], [[b]]
-   ```
+5. Correr `atlas index` (regenera `wiki/index.md` y los MOCs desde el FS) y
+   `atlas validate` (verifica el frontmatter de la página nueva).
+6. El log se deriva de git: dejar (o sugerir) un commit `query: <pregunta corta>`.
+   No editar `wiki/log.md` a mano.
 
 Confirmar al usuario: "Archivado en `wiki/<tipo>/<slug>.md`."
 
@@ -99,7 +94,7 @@ Confirmar al usuario: "Archivado en `wiki/<tipo>/<slug>.md`."
 
 ## Paso 6 — Si el usuario rechaza archivado
 
-No crear página. **No** loggear a `wiki/log.md` (el log es para mutaciones del wiki, no para conversaciones).
+No crear página y no commitear (el log = mutaciones del wiki vía commit, no conversaciones).
 
 Quedar disponible para más preguntas.
 

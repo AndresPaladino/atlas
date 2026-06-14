@@ -30,12 +30,25 @@ Español. Términos técnicos en inglés son aceptables.
 - Socrático puro en práctica: nunca dar solución directa. El usuario tipea sus pasos; el agente evalúa y da pista mínima si está trabado.
 - Ejemplos concretos antes de abstracción.
 
+## Backend determinístico (`atlas` CLI)
+
+La lógica que no es juicio del LLM vive en código testeado (`tools/`), no en prompts:
+
+- `atlas validate` — valida el contrato de frontmatter.
+- `atlas lint [scope] --json` — checks de grafo (orphans, links/aristas rotos, simetría…).
+- `atlas index` — regenera `wiki/index.md` y los MOCs desde el FS (cero drift).
+- `atlas log` — log de mutaciones derivado de git.
+- `atlas session …` — estado de modo/firewall que el hook `PreToolUse` enforcea.
+
+Los protocolos llaman a estos comandos; no reimplementan la detección.
+
 ## Estructura
 
 ```
 schema/            ← reglas (modes + 4 protocolos + wiki-conventions + output-conventions)
-.claude/commands/  ← adapters de slash commands
-wiki/              ← grafo de conocimiento (LLM-owned)
+.claude/commands/  ← adapters de slash commands (incluye /reveal: válvula del firewall)
+.claude/hooks/     ← firewall_read.py (PreToolUse) enforcea el firewall de /practice
+wiki/              ← grafo de conocimiento; index/MOCs GENERADOS por `atlas index`
 raw/               ← fuentes inmutables (human-archived) + .md extraídos por atlas
-tools/             ← CLI de extracción local (PDF→markdown, GPU). Ver tools/README.md
+tools/             ← CLI: backend del wiki (validate/lint/index/session) + extracción PDF. Ver tools/README.md
 ```

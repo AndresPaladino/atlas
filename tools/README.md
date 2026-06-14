@@ -1,17 +1,37 @@
 # atlas (CLI)
 
-Convierte los PDFs de `raw/` a markdown con LaTeX y captions de figuras, usando la GPU disponible (CUDA/MPS/CPU). Así Claude lee texto en vez de imágenes → menos tokens, misma fidelidad.
+Backend de Atlas. Dos responsabilidades:
+
+1. **Knowledge graph** (liviano, solo `pyyaml`): valida, audita, indexa el wiki y
+   maneja el estado de sesión que enforcea el firewall. No necesita GPU ni torch.
+2. **Extracción de PDFs** (pesado, extra `[extract]`): convierte `raw/*.pdf` a
+   markdown con LaTeX y captions de figuras usando la GPU (CUDA/MPS/CPU).
 
 ## Instalación
 
 ```bash
-./install.sh        # macOS / Linux
+./install.sh        # macOS / Linux  → instala atlas[extract,render]
 .\install.ps1       # Windows (PowerShell)
 ```
 
 Solo necesitás Python. El script instala `uv` si falta y configura el backend de torch automáticamente.
 
+Si solo querés el knowledge tooling (validate/lint/index/session) sin los ~8 GB de
+modelos de extracción: `uv tool install .` (sin el extra `[extract]`).
+
 **Captions de figuras (opcional):** requiere [Ollama](https://ollama.com/download) + `ollama pull qwen2.5vl:7b`. Sin esto la extracción funciona igual pero sin describir imágenes.
+
+## Knowledge graph
+
+```bash
+atlas validate                 # valida el frontmatter de todas las páginas (exit≠0 si hay errores)
+atlas lint [scope] [--json]    # audita el wiki: orphans, links/aristas rotos, simetría, drift
+atlas index                    # regenera wiki/index.md y los MOCs desde el filesystem
+atlas log [-n N]               # log de mutaciones del wiki, derivado de git
+atlas session set "<T>"        # arranca sesión practice sobre T (calcula slugs bloqueados)
+atlas session reveal | clear   # válvula del firewall / reset
+atlas session check <archivo>  # ¿el firewall permite leer? (lo usa el hook PreToolUse)
+```
 
 ## Uso
 

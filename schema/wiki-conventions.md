@@ -151,8 +151,20 @@ Cuando un modo modifica una página:
 
 1. Actualizar `updated:` en el frontmatter.
 2. Si se agrega una fuente nueva: append a `sources:` (no reemplazar).
-3. Si se agrega área nueva: append a `areas:`.
+3. Si se agrega área nueva: append a `areas:`. Las áreas son las **5 gruesas**
+   (`math`, `signals`, `computing`, `engineering-physics`, `ml`); la granularidad
+   fina (linear-algebra, data-science, …) va en `tags:`, no en `areas:`.
 4. Si `requires:` o `unlocks:` cambian: verificar que los wikilinks existan (o se vayan a crear en la misma operación).
+
+### `updated:` — a mano *y* derivado
+
+`updated:` es la **fecha de la última edición de contenido intencional**, puesta a
+mano por el modo que toca la página (semántica que git no captura: un reformateo
+masivo no es una revisión de contenido). En paralelo, **git es el registro real**
+de cuándo cambió el archivo: `atlas log` lo muestra. El check `updated-stale`
+reconcilia ambos —marca cuando el último commit es posterior a `updated:`— para
+que decidas si hubo cambio de contenido (bumpeás `updated:`) o no (lo ignorás).
+Los dos coexisten a propósito: el campo lleva intención, git lleva el hecho.
 
 ---
 

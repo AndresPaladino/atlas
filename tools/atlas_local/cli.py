@@ -76,9 +76,23 @@ def _preflight(targets: list[Path], cache_dir: Path, raw_dir: Path) -> None:
 
 app = typer.Typer(
     add_completion=False,
-    help="Atlas CLI — extrae PDFs a markdown (PDF → markdown+LaTeX+captions).",
+    help="Atlas CLI — backend del knowledge graph (validate/lint/index/session) "
+         "y extracción de PDFs (extract).",
 )
 console = Console()
+
+
+# ── localización del wiki / raíz del repo ─────────────────────────────────────
+def _require_wiki(explicit: Optional[Path]) -> Path:
+    """Resuelve wiki/ o aborta con mensaje claro."""
+    from .wiki.paths import find_wiki_dir
+
+    wiki = find_wiki_dir(explicit)
+    if wiki is None or not wiki.is_dir():
+        console.print("[red]No encuentro wiki/. Corré el comando dentro del repo "
+                      "Atlas o pasá --wiki.[/red]")
+        raise typer.Exit(1)
+    return wiki
 
 
 # ── localización del directorio raw/ ──────────────────────────────────────────
@@ -329,6 +343,184 @@ def render(
 
     text = file.read_text(encoding="utf-8") if file else sys.stdin.read()
     sys.stdout.write(render_text(text))
+
+
+# ── validate ────────────────────────────────────────────────────────────────────
+@app.command()
+def validate(
+    wiki: Optional[Path] = typer.Option(None, "--wiki", help="Directorio wiki/ (auto-detectado)."),
+) -> None:
+    """Valida el contrato de frontmatter de todas las páginas. Exit ≠ 0 si hay errores."""
+    from .wiki.loader import load_wiki
+    from .wiki.schema import validate_page
+
+    wiki_dir = _require_wiki(wiki)
+    pages = load_wiki(wiki_dir)
+    n_err = 0
+    n_warn = 0
+    for p in pages:
+        for msg in validate_page(p):
+            if msg.startswith("warn:"):
+                n_warn += 1
+                console.print(f"[yellow]warn[/yellow]  {p.rel_path}: {msg.removeprefix('warn: ')}")
+            else:
+                n_err += 1
+                console.print(f"[red]error[/red] {p.rel_path}: {msg}")
+    console.print(
+        f"\n{len(pages)} páginas · [red]{n_err} errores[/red] · [yellow]{n_warn} warnings[/yellow]"
+    )
+    if n_err:
+        raise typer.Exit(1)
+
+
+# ── lint ──────────────────────────────────────────────────────────────────────
+@app.command(name="lint")
+def lint_cmd(
+    scope: Optional[str] = typer.Argument(None, help="Carpeta del wiki (concepts, theorems, …)."),
+    wiki: Optional[Path] = typer.Option(None, "--wiki", help="Directorio wiki/ (auto-detectado)."),
+    as_json: bool = typer.Option(False, "--json", help="Salida JSON (para los modos LLM)."),
+) -> None:
+    """Audita la consistencia del wiki (orphans, links/aristas rotos, simetría, …)."""
+    import json as _json
+
+    from .wiki.lint import lint
+
+    wiki_dir = _require_wiki(wiki)
+    raw_dir = wiki_dir.parent / "raw"
+    findings = lint(wiki_dir, scope=scope, raw_dir=raw_dir if raw_dir.is_dir() else None)
+
+    if as_json:
+        console.print_json(_json.dumps({"findings": [f.as_dict() for f in findings]}))
+        return
+
+    if not findings:
+        console.print("[green]✓ Sin findings.[/green]")
+        return
+
+    from collections import Counter
+    counts = Counter(f.check for f in findings)
+    table = Table(title=f"lint · wiki/ ({'/'+scope if scope else 'completo'})")
+    table.add_column("sev")
+    table.add_column("check")
+    table.add_column("ubicación")
+    table.add_column("detalle")
+    for f in findings:
+        color = "red" if f.severity == "error" else "yellow"
+        table.add_row(f"[{color}]{f.severity}[/{color}]", f.check, f.location, f.message)
+    console.print(table)
+    summary = " · ".join(f"{k}: {v}" for k, v in sorted(counts.items()))
+    console.print(f"\n{len(findings)} findings — {summary}")
+
+
+# ── index ──────────────────────────────────────────────────────────────────────
+@app.command(name="index")
+def index_cmd(
+    wiki: Optional[Path] = typer.Option(None, "--wiki", help="Directorio wiki/ (auto-detectado)."),
+) -> None:
+    """Regenera wiki/index.md y los MOCs de área desde el filesystem."""
+    from .wiki.index import generate
+
+    wiki_dir = _require_wiki(wiki)
+    changed = generate(wiki_dir)
+    if changed:
+        console.print("[green]Regenerado:[/green]")
+        for c in changed:
+            console.print(f"  • {c}")
+    else:
+        console.print("[green]Índice y MOCs ya estaban al día.[/green]")
+
+
+# ── log ──────────────────────────────────────────────────────────────────────
+@app.command(name="log")
+def log_cmd(
+    limit: int = typer.Option(30, "--limit", "-n", help="Cantidad de commits a mostrar."),
+    wiki: Optional[Path] = typer.Option(None, "--wiki", help="Directorio wiki/ (auto-detectado)."),
+) -> None:
+    """Muestra el log de mutaciones del wiki, derivado de git."""
+    from .wiki.gitlog import render_log
+
+    wiki_dir = _require_wiki(wiki)
+    console.print(render_log(wiki_dir.parent, limit=limit))
+
+
+# ── session (firewall) ──────────────────────────────────────────────────────────
+session_app = typer.Typer(help="Estado de sesión / firewall del modo practice.")
+app.add_typer(session_app, name="session")
+
+
+def _session_root(wiki: Optional[Path]) -> Path:
+    return _require_wiki(wiki).parent
+
+
+@session_app.command("set")
+def session_set(
+    topic: str = typer.Argument(..., help="Tema T de la sesión practice."),
+    wiki: Optional[Path] = typer.Option(None, "--wiki"),
+) -> None:
+    """Arranca una sesión practice sobre T y calcula los slugs bloqueados (grafo)."""
+    from .wiki.session import set_practice
+
+    root = _session_root(wiki)
+    s = set_practice(root, root / "wiki", topic)
+    console.print(f"[cyan]practice[/cyan] · T = {s.topic}")
+    console.print(f"Bloqueados ({len(s.blocked_slugs)}): {', '.join(s.blocked_slugs) or '—'}")
+
+
+@session_app.command("mode")
+def session_mode(
+    mode: str = typer.Argument(..., help="query | practice | ingest | lint"),
+    wiki: Optional[Path] = typer.Option(None, "--wiki"),
+) -> None:
+    """Cambia el modo. Cualquier modo ≠ practice levanta el firewall."""
+    from .wiki.session import set_mode
+
+    s = set_mode(_session_root(wiki), mode)
+    console.print(f"[cyan]modo:[/cyan] {s.mode}")
+
+
+@session_app.command("reveal")
+def session_reveal(wiki: Optional[Path] = typer.Option(None, "--wiki")) -> None:
+    """Válvula de escape: permite la próxima lectura bloqueada (queda logueada)."""
+    from .wiki.session import set_reveal
+
+    set_reveal(_session_root(wiki), True)
+    console.print("[yellow]reveal ON[/yellow] — el firewall permite leer; recordá /practice para re-armarlo.")
+
+
+@session_app.command("clear")
+def session_clear(wiki: Optional[Path] = typer.Option(None, "--wiki")) -> None:
+    """Resetea la sesión (modo query, sin bloqueos)."""
+    from .wiki.session import clear
+
+    clear(_session_root(wiki))
+    console.print("[green]Sesión reseteada (modo query).[/green]")
+
+
+@session_app.command("show")
+def session_show(wiki: Optional[Path] = typer.Option(None, "--wiki")) -> None:
+    """Muestra el estado de sesión actual."""
+    from .wiki.session import load_session
+
+    s = load_session(_session_root(wiki))
+    console.print(f"modo={s.mode} · T={s.topic} · reveal={s.reveal}")
+    console.print(f"bloqueados ({len(s.blocked_slugs)}): {', '.join(s.blocked_slugs) or '—'}")
+
+
+@session_app.command("check")
+def session_check(
+    path: Path = typer.Argument(..., help="Archivo que se quiere leer."),
+    wiki: Optional[Path] = typer.Option(None, "--wiki"),
+) -> None:
+    """Decide si el firewall permite leer un archivo. Exit 2 = denegado (para el hook)."""
+    from .wiki.session import check_read
+
+    root = _session_root(wiki)
+    allowed, reason = check_read(root, path)
+    if allowed:
+        raise typer.Exit(0)
+    # markup=False: el mensaje lleva [[slug]] y va al hook / a Claude tal cual.
+    console.print(reason, markup=False)
+    raise typer.Exit(2)
 
 
 if __name__ == "__main__":

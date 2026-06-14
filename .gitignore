@@ -27,3 +27,9 @@ raw/**/*.jpeg
 # compartibles entre máquinas); las imágenes que extrae marker quedan locales.
 !raw/**/*.md
 !raw/.atlas-extract.json
+
+# Caché local de modelos ML (marker/HuggingFace) — pesados, no van al repo.
+.atlas-cache/
+
+# Estado de sesión / firewall (efímero, por máquina).
+.atlas/

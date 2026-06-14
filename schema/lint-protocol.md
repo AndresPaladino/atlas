@@ -7,25 +7,29 @@ updated: 2026-06-10
 
 Auditar consistencia del wiki. Reportar problemas accionables y ofrecer fix interactivo. No modifica nada sin confirmación del usuario.
 
+> **La detección es código, no prompt.** Corré `atlas lint [scope] --json`: los
+> checks de abajo están implementados de forma determinística en el CLI
+> (`tools/atlas_local/wiki/lint.py`). El agente **no** los reimplementa leyendo
+> archivos — consume el JSON y se dedica al juicio: presentar, priorizar y aplicar
+> fixes. La lista de abajo es la **especificación** de lo que el comando detecta.
+
 ---
 
 ## Apertura
 
 1. Anunciar `[modo: lint]`.
-2. Determinar scope:
-   - Sin argumento: todo `wiki/`.
-   - Con argumento (ej `/lint concepts` o `/lint math`): solo esa carpeta o área.
-3. Construir un índice en memoria de todas las páginas wiki dentro del scope (frontmatter + wikilinks).
+2. Determinar scope (sin argumento = todo `wiki/`; con argumento = carpeta).
+3. Correr `atlas lint $SCOPE --json` y parsear los findings.
 
 ---
 
-## Checks
+## Checks (especificación del comando)
 
-Aplicar todos en orden. Cada check produce 0..N findings.
+El comando aplica todos. Cada check produce 0..N findings.
 
 ### 1. Orphans
 
-Páginas sin inbound wikilinks ni listadas en `wiki/index.md` ni en `wiki/areas/*.md`.
+Páginas sin ningún wikilink entrante ni arista (`requires`/`unlocks`/`sources`/`illustrates`/`compares`/`covers_*`) que las referencie desde otra página. (El índice y los MOCs se generan, así que no cuentan como "referencia".)
 
 Excepción: páginas tipo `area` y `source` son raíces, no son orphans por definición.
 
@@ -101,11 +105,11 @@ Páginas wiki donde falta algún campo obligatorio según `schema/wiki-conventio
 
 ### 10. `updated:` rancio
 
-Páginas wiki cuyo `updated:` es anterior a `created:` o anterior al último append a `wiki/log.md` que las menciona.
+Páginas wiki cuyo `updated:` es anterior a la fecha del último commit de git que tocó el archivo (`git log -1 --format=%cs -- <file>`).
 
-**Finding**: `updated-stale | [[<slug>]] updated=<fecha> pero loggeada en wiki/log.md el <fecha-mayor>`
+**Finding**: `updated-stale | <file> updated=<fecha> pero el último commit es <fecha-mayor>`
 
-**Fix sugerido**: actualizar al `max(updated, último log mencionante)`.
+**Fix sugerido**: actualizar `updated:` a la fecha del último commit.
 
 ---
 
@@ -147,15 +151,10 @@ Para cada finding aceptado por el usuario:
 2. Proponer el fix exacto (qué texto cambia).
 3. Esperar `sí` / `no` / `editá` (si el usuario quiere ajustar el fix).
 4. Aplicar.
-5. Append a `wiki/log.md`:
-   ```markdown
-   ## [YYYY-MM-DD] lint | <finding-type>
+5. Si el fix tocó el catálogo, correr `atlas index`. El log se deriva de git:
+   dejar (o sugerir) un commit `lint: <breve>` al cerrar la tanda de fixes.
 
-   - Archivo: <path>
-   - Acción: <breve>
-   ```
-
-Si el usuario dice "no" a un finding: no aplicar, pasar al siguiente. El finding queda registrado en la sesión actual pero no en `wiki/log.md`.
+Si el usuario dice "no" a un finding: no aplicar, pasar al siguiente.
 
 ---
 

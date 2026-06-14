@@ -132,25 +132,27 @@ Aristas son del DAG conceptual, no de la fuente. La fuente solo aporta la oportu
 
 ---
 
-## Paso 6 — Actualizar índice y áreas
+## Paso 6 — Regenerar índice y áreas
 
-- `wiki/index.md`: append a la sección correspondiente (concepts / theorems / etc.) con un link a la página nueva o modificada. Si el archivo usa Dataview, no requiere edición manual.
-- `wiki/areas/<area>.md`: si la página pertenece a un área cuyo MOC no la listaba, append vía Dataview (no manual) o nota manual si Dataview no está disponible.
+Correr `atlas index`. Regenera `wiki/index.md` y los MOCs de `wiki/areas/*.md`
+desde el filesystem (entre marcadores `<!-- atlas:auto -->`, preservando las
+descripciones humanas). **No** editar esas listas a mano — driftan.
+
+Después, `atlas validate` para confirmar que el frontmatter de las páginas nuevas
+cumple el contrato (`schema/wiki-conventions.md`).
 
 ---
 
-## Paso 7 — Log
+## Paso 7 — Commit (= log)
 
-Append a `wiki/log.md`:
+El log de mutaciones se deriva de git: la mutación real *es* el commit. No editar
+`wiki/log.md` a mano. Dejar (o sugerir) un commit con la convención:
 
-```markdown
-## [YYYY-MM-DD] ingest | <título de la fuente>
-
-- Fuente: [[<slug>]] (`raw/<path>`)
-- Páginas wiki creadas: [[a]], [[b]]
-- Páginas wiki actualizadas: [[c]] (sources +1), [[d]] (cuerpo expandido)
-- Aristas nuevas: [[a]] requires [[x]]; [[b]] unlocks [[y]]
 ```
+ingest: <título de la fuente> — N páginas creadas, M actualizadas
+```
+
+`atlas log` lo renderiza después (`git log -- wiki/`).
 
 ---
 
