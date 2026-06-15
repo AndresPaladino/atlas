@@ -1,6 +1,6 @@
 # Atlas
 
-Sistema personal de conocimiento construido sobre [Claude Code](https://claude.ai/code). Mantiene un wiki interconectado que se puebla, consulta y practica con sesiones de Claude.
+Sistema personal de conocimiento construido sobre [Claude Code](https://claude.ai/code). Mantiene un wiki interconectado que se popula, consulta y practica con sesiones de Claude. Incluye un CLI (`atlas`) para extracción de PDFs y mantenimiento del grafo.
 
 ## Instalación
 
@@ -10,12 +10,12 @@ cd atlas
 bash setup.sh
 ```
 
-`setup.sh` detecta el OS e instala el CLI de extracción automáticamente (también instalable por separado desde `tools/`).
+`setup.sh` crea la estructura del wiki e instala el CLI `atlas`.
 
 ## Uso
 
 ```bash
-claude   # abrí Claude Code en la raíz del repo
+claude   # abrir Claude Code en la raíz del repositorio
 ```
 
 | Comando | Para qué |
@@ -26,6 +26,21 @@ claude   # abrí Claude Code en la raíz del repo
 | `/lint` | Auditar consistencia del wiki |
 
 Sin slash command, Atlas elige el modo según contexto.
+
+## CLI `atlas`
+
+```bash
+# Knowledge graph
+atlas validate        # valida frontmatter del wiki
+atlas lint            # audita orphans, links rotos, drift
+atlas index           # regenera index.md y MOCs
+
+# Extracción de PDFs (raw/ → markdown)
+atlas extract         # convierte PDFs pendientes en raw/
+atlas status          # PDFs pendientes / convertidos / desactualizados
+```
+
+Ver `tools/README.md` para opciones completas (segmentación, captions con Ollama, etc.).
 
 ## Licencia
 
