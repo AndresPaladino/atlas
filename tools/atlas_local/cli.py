@@ -3,8 +3,19 @@
 from __future__ import annotations
 
 import os
+import re
+import shutil
 from pathlib import Path
 from typing import Optional
+
+# Referencia de imagen generada por marker: ![](_page_N_Kind_idx.ext)
+# sin prefijo de directorio (i.e. bare, sibling al .md).
+_BARE_IMG_REF_RE = re.compile(r"(!\[[^\]]*\]\()(_page_[^/)\s]+)(\))")
+
+
+def _prefix_image_refs(markdown: str, prefix: str) -> str:
+    """Reescribe refs de imagen bare (_page_…) → <prefix>/_page_… en el monolítico."""
+    return _BARE_IMG_REF_RE.sub(lambda m: f"{m.group(1)}{prefix}/{m.group(2)}{m.group(3)}", markdown)
 
 import typer
 from rich.console import Console
@@ -295,13 +306,22 @@ def extract(
                 f"<!-- atlas-local: extraído de {rel} con {result.extractor} "
                 f"v{result.extractor_version} en {device.kind}. No editar a mano. -->\n\n"
             )
-            md_path.write_text(header + result.markdown, encoding="utf-8")
 
-            # Imágenes locales junto al .md (gitignored); habilitan render local de refs.
-            for name, data in result.images.items():
-                (pdf.parent / name).write_bytes(data)
+            # Imágenes al subdirectorio <stem>/ para evitar colisiones entre PDFs.
+            # Los chunks viven en ese mismo dir, así sus refs bare resuelven bien.
+            # El monolítico vive un nivel arriba y necesita el prefijo.
+            img_dir = pdf.parent / pdf.stem
+            if result.images:
+                img_dir.mkdir(exist_ok=True)
+                for name, data in result.images.items():
+                    (img_dir / name).write_bytes(data)
+                md_markdown = _prefix_image_refs(result.markdown, pdf.stem)
+            else:
+                md_markdown = result.markdown
+            md_path.write_text(header + md_markdown, encoding="utf-8")
 
             # Segmentación: docs grandes → chunks + TOC para ingest selectivo.
+            # Usa result.markdown (refs bare) — los chunks viven en img_dir.
             seg = None
             total_tokens = seg_mod.token_est(result.markdown)
             want_segment = segment if segment is not None else seg_mod.should_segment(
@@ -335,6 +355,113 @@ def extract(
 
     if push and extracted:
         _git_push(raw_dir, extracted)
+
+
+# ── migrate-images ─────────────────────────────────────────────────────────────
+@app.command(name="migrate-images")
+def migrate_images(
+    raw: Optional[Path] = typer.Option(None, "--raw", help="Directorio raw/ (auto-detectado por defecto)."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Solo reportar, no mover ni modificar nada."),
+) -> None:
+    """Mueve imágenes de extracción al subdirectorio <stem>/ y actualiza refs en los .md.
+
+    Resuelve colisiones de nombres entre PDFs distintos extraídos al mismo directorio.
+    Las imágenes de cada documento quedan en raw/<stem>/ junto a sus chunks.
+    Los .md monolíticos se actualizan para prefijar las refs con <stem>/.
+    """
+    raw_dir = find_raw_dir(raw)
+    if not raw_dir.is_dir():
+        console.print(f"[red]No existe el directorio raw/: {raw_dir}[/red]")
+        raise typer.Exit(1)
+
+    # Recolectar .md directamente en raw/ (no dentro de subdirectorios de chunks).
+    root_mds = sorted(p for p in raw_dir.glob("*.md") if p.is_file())
+
+    n_moved = 0
+    n_already_ok = 0
+    n_missing = 0
+    n_updated_mds = 0
+    collisions: list[str] = []
+
+    for md_path in root_mds:
+        text = md_path.read_text(encoding="utf-8")
+        bare_refs = _BARE_IMG_REF_RE.findall(text)  # [(pfx, imgname, sfx), ...]
+        if not bare_refs:
+            continue
+
+        img_names = {ref[1] for ref in bare_refs}  # set de nombres únicos
+        stem = md_path.stem
+        target_dir = raw_dir / stem
+
+        # Separar las que existen en root (pendientes de mover) de las que faltan.
+        present = [n for n in img_names if (raw_dir / n).exists()]
+        missing = [n for n in img_names if not (raw_dir / n).exists()
+                   and not (target_dir / n).exists()]
+        already_in_subdir = [n for n in img_names if (target_dir / n).exists()]
+
+        if not present and not missing:
+            n_already_ok += 1
+            continue
+
+        if dry_run:
+            console.print(f"[cyan]{md_path.name}[/cyan] → {stem}/  "
+                          f"({len(present)} a mover, {len(already_in_subdir)} ya ok, "
+                          f"[red]{len(missing)} missing[/red])")
+            for m in missing:
+                console.print(f"  [red]missing:[/red] {m}")
+            n_missing += len(missing)
+            continue
+
+        # Mover imágenes presentes en root → target_dir.
+        if present:
+            target_dir.mkdir(exist_ok=True)
+        for img_name in present:
+            src = raw_dir / img_name
+            dst = target_dir / img_name
+            if dst.exists():
+                # Otro .md ya copió este nombre al mismo subdir — colisión real.
+                collisions.append(f"{md_path.name}: {img_name} (sobrescrito en {stem}/)")
+            shutil.copy2(src, dst)
+            n_moved += 1
+
+        # Actualizar las refs en el .md monolítico: bare → stem/bare.
+        new_text = _prefix_image_refs(text, stem)
+        if new_text != text:
+            md_path.write_text(new_text, encoding="utf-8")
+            n_updated_mds += 1
+
+        n_missing += len(missing)
+        if missing:
+            console.print(f"[yellow]{md_path.name}:[/yellow] {len(missing)} imágenes ya perdidas por colisión: "
+                          + ", ".join(missing[:5]) + ("…" if len(missing) > 5 else ""))
+
+    # Limpiar root: borrar _page_* que ya no aparezcan en ningún .md de root.
+    if not dry_run:
+        still_referenced: set[str] = set()
+        for md_path in root_mds:
+            for _, img_name, _ in _BARE_IMG_REF_RE.findall(md_path.read_text(encoding="utf-8")):
+                still_referenced.add(img_name)
+
+        deleted = 0
+        for img_file in raw_dir.glob("_page_*"):
+            if img_file.is_file() and img_file.name not in still_referenced:
+                img_file.unlink()
+                deleted += 1
+        if deleted:
+            console.print(f"[dim]Eliminadas {deleted} imágenes huérfanas del root.[/dim]")
+
+    # Resumen.
+    if dry_run:
+        console.print(f"\n[dim]--dry-run: nada modificado.[/dim] "
+                      f"{n_missing} imágenes faltantes (perdidas por colisión previa).")
+    else:
+        console.print(f"\n[green]✓[/green] {n_moved} imágenes movidas · "
+                      f"{n_updated_mds} .md actualizados · "
+                      f"[red]{n_missing} missing[/red] (ya perdidas por colisión)")
+        if collisions:
+            console.print(f"[yellow]Colisiones ({len(collisions)}):[/yellow]")
+            for c in collisions[:10]:
+                console.print(f"  {c}")
 
 
 @app.command()
