@@ -41,6 +41,36 @@ sin ninguna fuente (las que tienen otra sobreviven). `ingest-stamp` graba
 `ingested_sha256` en el frontmatter de la fuente; `ingest-status` compara ese hash
 con el raw actual para que `--compile` saltee lo que no cambió.
 
+## Servidor MCP
+
+El mismo grafo del wiki se expone como un servidor [MCP](https://modelcontextprotocol.io/)
+para cualquier cliente (Claude Desktop, plugins, otro LLM) — desacople del runtime
+de Claude Code. Instalar con el extra y correr por stdio:
+
+```bash
+uv tool install '.[mcp]'        # o: pip install 'atlas[mcp]'
+ATLAS_ROOT=/ruta/al/repo atlas-mcp
+```
+
+Tools expuestas (I/O JSON, sin Rich): `atlas_query_index`, `atlas_read_page`,
+`atlas_search`, `atlas_lint`, `atlas_validate`, `atlas_ingest_status`, y la familia
+`atlas_session_*` (`set`/`mode`/`reveal`/`clear`/`show`). El **firewall de
+`/practice` se enforça en el server**: `atlas_read_page` consulta el estado de
+sesión y deniega las páginas bloqueadas, así que ningún cliente lo puede saltar.
+
+Config para Claude Desktop (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "atlas": {
+      "command": "atlas-mcp",
+      "env": { "ATLAS_ROOT": "/ruta/al/repo" }
+    }
+  }
+}
+```
+
 ## Uso
 
 ```bash
