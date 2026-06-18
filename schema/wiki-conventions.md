@@ -51,7 +51,7 @@ Campos extra por tipo:
 - **`theorem`**: `statement_form: "if A and B then C"` — esqueleto lógico.
 - **`method`**: `when_to_use: "..."`, `fails_when: "..."` — selección del método.
 - **`example`**: `illustrates: ["[[concept-or-theorem]]"]`, `difficulty: 1|2|3`.
-- **`source`**: `source_kind: lecture|book|paper|notes`, `path: "raw/foo.pdf"`, `pages: "12-34"`, `covers_concepts: [[...]]`, `covers_theorems: [[...]]`, `covers_methods: [[...]]`.
+- **`source`**: `source_kind: lecture|book|paper|notes`, `path: "raw/foo.pdf"`, `pages: "12-34"`, `covers_concepts: [[...]]`, `covers_theorems: [[...]]`, `covers_methods: [[...]]`. Opcional, gestionado por el CLI (no a mano): `ingested_sha256` — hash del raw ya ingerido, lo sella `atlas ingest-stamp` para que `--compile` saltee fuentes sin cambios.
 - **`comparison`**: `compares: ["[[A]]", "[[B]]"]`.
 - **`area`**: `tag_prefix: "math"` — prefijo de tag que captura sus miembros.
 
@@ -65,9 +65,8 @@ Campos extra por tipo:
 
 ## Notación matemática
 
-- Sintaxis: **KaTeX**.
-- Inline: `$...$`. Display: `$$...$$`.
-- **Prohibido**: `\(...\)` y `\[...\]` — incompatibles con varios renderers.
+Reglas canónicas de delimitadores y comandos KaTeX: `schema/output-conventions.md` (mismas reglas para páginas wiki y para respuestas). Extra solo-wiki:
+
 - Variables vectoriales: `\vec{v}` o `\mathbf{v}`. Mantener consistencia dentro de la página.
 - Operadores: `\nabla`, `\partial`, `\mathrm{d}`. Para diferenciales preferir `\mathrm{d}x` sobre `dx`.
 

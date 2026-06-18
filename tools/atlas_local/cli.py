@@ -562,6 +562,101 @@ def index_cmd(
         console.print("[green]Índice y MOCs ya estaban al día.[/green]")
 
 
+# ── forget ──────────────────────────────────────────────────────────────────────
+@app.command()
+def forget(
+    source: str = typer.Argument(..., help="Slug de la fuente a olvidar (wiki/sources/<slug>)."),
+    wiki: Optional[Path] = typer.Option(None, "--wiki", help="Directorio wiki/ (auto-detectado)."),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Aplicar sin confirmar."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Solo reportar el plan, no tocar nada."),
+) -> None:
+    """Olvida una fuente: quita su link de cada página y borra las que quedan sin fuentes.
+
+    Preserva entidades compartidas: una página con otra fuente sobrevive (solo
+    pierde este link); se borra solo la que quedaba sostenida por esta sola fuente.
+    """
+    from .wiki.forget import apply_forget, plan_forget
+    from .wiki.index import generate
+    from .wiki.loader import load_wiki
+
+    wiki_dir = _require_wiki(wiki)
+    plan = plan_forget(load_wiki(wiki_dir), source)
+    if plan.is_empty:
+        console.print(f"[yellow]No encontré la fuente '{source}' ni páginas que la citen.[/yellow]")
+        return
+
+    if plan.source_page:
+        console.print(f"[cyan]Página de fuente a borrar:[/cyan] {plan.source_page}")
+    console.print(f"[cyan]Páginas que solo pierden el link ({len(plan.unlinked)}):[/cyan] "
+                  + (", ".join(plan.unlinked) or "—"))
+    console.print(f"[red]Páginas a borrar (quedan sin fuente) ({len(plan.deleted)}):[/red] "
+                  + (", ".join(plan.deleted) or "—"))
+
+    if dry_run:
+        console.print("[dim]--dry-run: nada modificado.[/dim]")
+        return
+    if not yes and not typer.confirm("¿Aplicar?"):
+        console.print("Cancelado.")
+        return
+
+    touched = apply_forget(wiki_dir.parent, plan)
+    generate(wiki_dir)
+    console.print(f"[green]✓[/green] {len(touched)} archivos afectados. Índice regenerado.")
+
+
+# ── ingest-status / ingest-stamp (manifest raw→wiki) ─────────────────────────────
+@app.command(name="ingest-status")
+def ingest_status_cmd(
+    wiki: Optional[Path] = typer.Option(None, "--wiki", help="Directorio wiki/ (auto-detectado)."),
+    as_json: bool = typer.Option(False, "--json", help="Salida JSON (para --compile)."),
+) -> None:
+    """Estado de ingestión de cada fuente (new / stale / current / missing-raw)."""
+    import json as _json
+
+    from .wiki.ingest import ingest_status
+    from .wiki.loader import load_wiki
+
+    wiki_dir = _require_wiki(wiki)
+    statuses = ingest_status(load_wiki(wiki_dir), wiki_dir.parent)
+
+    if as_json:
+        console.print_json(_json.dumps({"sources": [s.as_dict() for s in statuses]}))
+        return
+
+    if not statuses:
+        console.print("[green]No hay páginas de fuente todavía.[/green]")
+        return
+    color = {"current": "green", "new": "cyan", "stale": "yellow", "missing-raw": "red"}
+    table = Table(title="ingest-status (raw → wiki)")
+    table.add_column("estado")
+    table.add_column("fuente")
+    table.add_column("raw")
+    for s in statuses:
+        table.add_row(f"[{color.get(s.status, 'white')}]{s.status}[/]", s.slug, s.raw_path or "—")
+    console.print(table)
+
+
+@app.command(name="ingest-stamp")
+def ingest_stamp_cmd(
+    source: str = typer.Argument(..., help="Slug de la fuente recién ingerida."),
+    wiki: Optional[Path] = typer.Option(None, "--wiki", help="Directorio wiki/ (auto-detectado)."),
+) -> None:
+    """Sella el hash del raw ingerido en el frontmatter de la fuente (idempotente)."""
+    from .wiki.ingest import stamp_source
+    from .wiki.loader import load_wiki
+
+    wiki_dir = _require_wiki(wiki)
+    page = next((p for p in load_wiki(wiki_dir) if p.folder == "sources" and p.slug == source), None)
+    if page is None:
+        console.print(f"[red]No existe wiki/sources/{source}.md[/red]")
+        raise typer.Exit(1)
+    digest = stamp_source(wiki_dir.parent, page)
+    if digest is None:
+        console.print(f"[yellow]No encontré el archivo raw de '{source}' (path/extracted). Sin sellar.[/yellow]")
+        raise typer.Exit(1)
+    console.print(f"[green]✓[/green] {source} sellada · ingested_sha256={digest[:12]}…")
+
+
 # ── log ──────────────────────────────────────────────────────────────────────
 @app.command(name="log")
 def log_cmd(

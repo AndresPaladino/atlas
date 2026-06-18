@@ -1,9 +1,12 @@
 """Generación de ``wiki/index.md`` y ``wiki/areas/*.md`` desde el filesystem.
 
 El catálogo deja de mantenerse a mano (y por lo tanto deja de driftar). Cada
-archivo lleva un bloque Dataview (render en Obsidian) **y** una lista plana
-generada entre marcadores ``<!-- atlas:auto … -->`` para clientes sin Dataview
-y para que los modos LLM tengan un catálogo plano sin releer 56 archivos.
+archivo lleva una lista plana de wikilinks generada entre marcadores
+``<!-- atlas:auto … -->``: la consumen los modos LLM (catálogo plano sin releer
+N archivos) y se renderiza igual en Obsidian como links navegables. Se eligió
+una sola representación —la lista plana— en vez de duplicarla con bloques
+Dataview: el grafo, backlinks y wikilinks de Obsidian no dependen de Dataview, y
+el bloque Dataview era ruido inútil para el LLM (no lo puede ejecutar).
 
 Solo se reescribe lo que está entre marcadores: el frontmatter, los títulos y
 las descripciones humanas se preservan.
@@ -16,6 +19,7 @@ import re
 from pathlib import Path
 
 from .loader import Page, load_wiki
+from .schema import AREAS_ORDERED
 
 _AUTO_START = "<!-- atlas:auto:start -->"
 _AUTO_END = "<!-- atlas:auto:end -->"
@@ -29,7 +33,8 @@ _TYPE_SECTIONS = [
     ("source", "Fuentes", "sources"),
 ]
 
-_AREAS = ["math", "signals", "computing", "engineering-physics", "ml"]
+# Áreas con MOC: única fuente de verdad en schema.py (evita drift).
+_AREAS = list(AREAS_ORDERED)
 
 
 def _today() -> str:
@@ -73,19 +78,15 @@ def render_index(pages: list[Page]) -> str:
         "# Wiki — catálogo",
         "",
         "> **Generado por `atlas index`.** No editar a mano la zona entre "
-        "marcadores. Los bloques Dataview se renderizan en Obsidian; la lista "
-        "plana de abajo es la fuente para clientes sin Dataview y para los modos.",
+        "marcadores. La lista plana de abajo es el catálogo: la consumen los "
+        "modos y se navega igual en Obsidian.",
         "",
         _AUTO_START,
     ]
-    for ptype, title, folder in _TYPE_SECTIONS:
+    for ptype, title, _folder in _TYPE_SECTIONS:
         out += [
             "",
             f"## {title}",
-            "",
-            "```dataview",
-            f"TABLE areas FROM \"wiki/{folder}\" SORT file.name ASC",
-            "```",
             "",
             _list_links(by_type[ptype]),
         ]
@@ -109,17 +110,12 @@ def render_area_block(area: str, pages: list[Page]) -> str:
         by_type.setdefault(p.type or "", []).append(p)
 
     blocks: list[str] = []
-    for ptype, title, folder in _TYPE_SECTIONS:
+    for ptype, title, _folder in _TYPE_SECTIONS:
         sel = by_type.get(ptype, [])
         if not sel and ptype in ("comparison",):
             continue
         blocks += [
             f"## {title}",
-            "",
-            "```dataview",
-            f"TABLE tags FROM \"wiki/{folder}\" "
-            f"WHERE contains(areas, \"{area}\") SORT file.name ASC",
-            "```",
             "",
             _list_links(sel),
             "",

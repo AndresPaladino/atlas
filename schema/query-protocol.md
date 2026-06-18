@@ -13,8 +13,8 @@ Formato de salida (matemática incluida): seguir `schema/output-conventions.md` 
 
 ## Apertura
 
-1. Anunciar `[modo: query]`.
-2. Parsear la pregunta: identificar conceptos / teoremas / métodos involucrados.
+1. Parsear la pregunta: identificar conceptos / teoremas / métodos involucrados.
+2. Si la pregunta roza el límite de lo que el wiki cubre, tener presente el alcance declarado en `schema/purpose.md` (qué entra y qué no).
 
 ---
 

@@ -18,11 +18,12 @@ VALID_TYPES = frozenset(
     {"concept", "theorem", "method", "example", "comparison", "source", "area"}
 )
 
-# Áreas con MOC propio. Las páginas pueden declarar otras, pero entonces no
-# aparecen en ningún MOC → validate lo marca como warning (no error).
-KNOWN_AREAS = frozenset(
-    {"math", "signals", "computing", "engineering-physics", "ml"}
-)
+# Áreas con MOC propio, en orden canónico (lo usa `atlas index` para listar los
+# MOCs). Las páginas pueden declarar otras, pero entonces no aparecen en ningún
+# MOC → validate lo marca como warning (no error). Única fuente de verdad: el
+# resto del paquete (p.ej. index.py) importa de acá, sin redefinir la lista.
+AREAS_ORDERED = ("math", "signals", "computing", "engineering-physics", "ml")
+KNOWN_AREAS = frozenset(AREAS_ORDERED)
 
 # Campos obligatorios para todo tipo excepto `area` (los MOC son livianos).
 _REQUIRED_COMMON = ("type", "title", "areas", "created", "updated")
