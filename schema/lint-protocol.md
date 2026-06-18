@@ -17,9 +17,8 @@ Auditar consistencia del wiki. Reportar problemas accionables y ofrecer fix inte
 
 ## Apertura
 
-1. Anunciar `[modo: lint]`.
-2. Determinar scope (sin argumento = todo `wiki/`; con argumento = carpeta).
-3. Correr `atlas lint $SCOPE --json` y parsear los findings.
+1. Determinar scope (sin argumento = todo `wiki/`; con argumento = carpeta).
+2. Correr `atlas lint $SCOPE --json` y parsear los findings.
 
 ---
 

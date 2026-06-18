@@ -35,17 +35,9 @@ Estas reglas son el contrato del modo. Son una restitución textual del comporta
 
 ## Firewall — el invariante crítico
 
-**Enforcement real (no honor system).** Al abrir la sesión, el agente corre
-`atlas session set "<T>"`: esto persiste el estado en `.atlas/session.json` y
-calcula los slugs bloqueados desde el grafo (la página de **T** *más* su
-vecindario `requires`/`unlocks` — un prerrequisito ya no queda legible y filtra
-estructura). Un hook `PreToolUse` (`.claude/hooks/firewall_read.py`) intercepta
-cada `Read` y **deniega** los archivos bloqueados: el firewall no depende de que
-el modelo obedezca, y sobrevive a la compactación de contexto.
+Mecánica de enforcement (hook `PreToolUse`, `.atlas/session.json`, válvulas `/reveal` y `/query`): `schema/modes.md`, sección "El firewall". Acá va la operacionalización: qué archivos bloquea, cómo se identifica **T**, y cómo se abre/cierra la sesión.
 
-Válvula de escape deliberada: `/reveal` (`atlas session reveal`) abre el firewall
-para una lectura puntual (cálculo/procedimiento) y queda registrado; `/query`
-cambia de modo y lo levanta del todo (`atlas session mode query`).
+El estado y los slugs bloqueados los fija `atlas session set "<T>"` (página de **T** *más* su vecindario `requires`/`unlocks`, para no filtrar estructura del grafo).
 
 Conceptualmente, durante una sesión sobre tema **T** el agente **no debe leer**:
 

@@ -11,14 +11,18 @@ Tomar una fuente cruda (PDF, notas, libro, paper) y poblar/actualizar el wiki co
 
 ## Apertura
 
-1. Anunciar `[modo: ingest]`.
+1. Leer `schema/purpose.md`: define el alcance (qué entra al wiki y qué se descarta). Filtrar los candidatos contra esto durante todo el análisis.
 2. Identificar la fuente:
    - Si el comando trae ruta: `Read` directo sobre el archivo en `raw/`.
    - Si trae descripción ("estas notas pegadas"): pedir el contenido.
    - Si trae solo nombre ambiguo: listar `raw/` y preguntar cuál.
 3. Confirmar `source_kind` (book / paper / notes / lecture) con el usuario si no es inferible del nombre del archivo.
 
+El ingest es en **dos fases**: primero se analiza (Fase 1, no se escribe nada), recién después se genera (Fase 2). La separación mejora la calidad —reflexionar antes de escribir— y evita reescrituras.
+
 ---
+
+# Fase 1 — Análisis (no se escribe nada)
 
 ## Paso 1 — Leer y mapear
 
@@ -33,23 +37,41 @@ Elegir la fuente más barata disponible, en este orden de preferencia:
 
 ---
 
-## Paso 2 — Discutir con el usuario
+## Paso 2 — Analizar contra el wiki existente
 
-Presentar el mapa de forma compacta:
+Para cada candidato del mapa, hacer lookup en `wiki/index.md` (por título / alias / slug) y armar el **artefacto de análisis** — todavía sin tocar ningún archivo:
 
-> "Identifiqué N conceptos en la fuente:
-> - ⟨lista de candidatos con tipo entre paréntesis⟩
+- **Estado**: ¿ya existe como página, o es nuevo?
+- **Conexiones**: con qué páginas existentes engancha (`requires` / `unlocks` plausibles).
+- **Contradicciones**: si la fuente afirma algo que choca con una página actual, marcarlo (no resolverlo todavía).
+- **Estructura propuesta**: qué páginas crear, cuáles actualizar, y bajo qué tipo / área.
+
+---
+
+## Paso 3 — Discutir con el usuario
+
+Presentar el análisis de forma compacta:
+
+> "Analicé la fuente:
+> - Nuevos: ⟨candidatos con tipo entre paréntesis⟩
+> - Ya cubiertos (solo agrego la fuente): ⟨...⟩
+> - Contradicciones / a revisar: ⟨...⟩
 >
-> ¿Cuáles enfatizo? ¿Hay alguno que ya cubrimos antes y solo quiero agregar como fuente?"
+> ¿Cuáles enfatizo? ¿Confirmás la estructura propuesta?"
 
 Esperar respuesta del usuario. El usuario puede:
 - Pedir focus en un subconjunto.
 - Marcar conceptos como "ya existe" → solo actualizar.
 - Indicar que se cree todo.
+- Resolver una contradicción detectada.
 
 ---
 
-## Paso 3 — Crear página de fuente
+# Fase 2 — Generación
+
+Recién acá se crean / modifican archivos, según lo acordado en Fase 1.
+
+## Paso 4 — Crear página de fuente
 
 Crear `wiki/sources/<slug>.md`.
 
@@ -61,27 +83,14 @@ Slug:
 
 No codificar el origen en el slug — el slug describe el contenido, no el contexto de uso.
 
-Frontmatter:
+Frontmatter: seguir el **frontmatter común** de `schema/wiki-conventions.md` (single source of truth) con `type: source` y los campos propios del tipo:
 
-```yaml
----
-type: source
-title: "<título legible>"
-aliases: ["<variantes>"]
-source_kind: book | paper | notes | lecture
-path: "raw/<nombre-de-archivo>"   # ruta relativa al repo, sin subcarpetas (siempre el .pdf, fuente inmutable)
-extracted: "raw/<nombre-de-archivo>.md"  # opcional: markdown cacheado leído en el ingest (atlas extract)
-toc: "raw/<nombre-de-archivo>.toc.md"    # opcional: índice de segmentación, si el doc se segmentó
-pages: "1-24"                     # rango cubierto, opcional
-areas: [math, signals]
-tags: [calculus/vector]
-covers_concepts: ["[[implicit-function-theorem]]", "[[jacobian]]"]
-covers_theorems: ["[[implicit-function-theorem]]"]
-covers_methods: []
-created: YYYY-MM-DD
-updated: YYYY-MM-DD
----
-```
+- `source_kind: book | paper | notes | lecture`
+- `path: "raw/<archivo>"` — ruta al `.pdf` (fuente inmutable), sin subcarpetas.
+- `extracted: "raw/<archivo>.md"` — opcional: markdown cacheado leído en el ingest (`atlas extract`).
+- `toc: "raw/<archivo>.toc.md"` — opcional: índice de segmentación, si el doc se segmentó.
+- `pages: "1-24"` — rango cubierto, opcional.
+- `covers_concepts` / `covers_theorems` / `covers_methods` — wikilinks a lo que la fuente cubre.
 
 Cuerpo:
 
@@ -102,9 +111,9 @@ Si el doc tiene `raw/<nombre>.toc.md`, esta tabla se deriva casi directo de él:
 
 ---
 
-## Paso 4 — Para cada concepto del mapa
+## Paso 5 — Para cada concepto del mapa
 
-Hacer un lookup en `wiki/index.md` por título / alias / slug.
+Según el estado ya determinado en el análisis (Paso 2):
 
 ### Caso A: existe
 
@@ -121,7 +130,7 @@ Hacer un lookup en `wiki/index.md` por título / alias / slug.
 
 ---
 
-## Paso 5 — Actualizar aristas
+## Paso 6 — Actualizar aristas
 
 Para cada página tocada (creada o modificada):
 
@@ -132,7 +141,16 @@ Aristas son del DAG conceptual, no de la fuente. La fuente solo aporta la oportu
 
 ---
 
-## Paso 6 — Regenerar índice y áreas
+## Paso 7 — Sellar el hash de ingestión
+
+Por cada fuente ingerida, correr `atlas ingest-stamp <slug>`: registra en su
+frontmatter (`ingested_sha256`) el hash del raw que se ingirió. Es lo que permite
+a `--compile` saltear después las fuentes sin cambios (cero re-ingesta redundante).
+Determinístico — el LLM no calcula el hash, solo invoca el comando.
+
+---
+
+## Paso 8 — Regenerar índice y áreas
 
 Correr `atlas index`. Regenera `wiki/index.md` y los MOCs de `wiki/areas/*.md`
 desde el filesystem (entre marcadores `<!-- atlas:auto -->`, preservando las
@@ -143,7 +161,7 @@ cumple el contrato (`schema/wiki-conventions.md`).
 
 ---
 
-## Paso 7 — Commit (= log)
+## Paso 9 — Commit (= log)
 
 El log de mutaciones se deriva de git: la mutación real *es* el commit. No editar
 `wiki/log.md` a mano. Dejar (o sugerir) un commit con la convención:
@@ -192,6 +210,7 @@ Activado con `/ingest --compile`. Escanea `raw/` en busca de archivos no registr
    **Excluir siempre los artefactos que produce `atlas extract`** — no son fuentes: el `.md` monolítico, el `<nombre>.toc.md`, y **todo** lo que viva dentro de un directorio de chunks `raw/<nombre>/`. La forma fiable de identificarlos es leer `raw/.atlas-extract.json` y descartar todo `md_path`, `toc_path` y cualquier archivo bajo un `chunks_dir`. **Un documento segmentado es una sola fuente = su `.pdf`**; sus chunks y su TOC nunca se enumeran como fuentes separadas (al ingerir esa fuente, el Paso 1 ya lee el TOC y solo los chunks relevantes).
 2. Leer los frontmatters de todos los archivos bajo `wiki/sources/` y extraer el campo `path:` de cada uno.
 3. Construir la lista de **archivos no registrados**: fuentes en `raw/` cuyo path no aparece en ningún `path:` de `wiki/sources/`.
+   Además, correr `atlas ingest-status --json`: las fuentes ya registradas con estado `stale` (su raw cambió desde la última ingesta) son candidatas a **re-ingestión**; las `current` se saltean (cero llamadas LLM). Sumar las `stale` a la lista a procesar.
 4. Para cada fuente nueva, chequear si existe su `.md` cacheado (mismo nombre, extensión `.md`). Si **falta**, avisar y sugerir correr la extracción local antes de ingerir (no convertir el PDF desde Claude):
    > "`<archivo>.pdf` no tiene markdown extraído. Corré `atlas extract` (o `atlas extract raw/<archivo>.pdf`) y volvé a `/ingest --compile`. Si querés ingerirlo igual ahora, lo leo visualmente del PDF (más caro en tokens)."
 
@@ -215,7 +234,7 @@ Esperar respuesta. El usuario puede:
 
 ### Paso C3 — Ingerir en secuencia
 
-Para cada archivo seleccionado, ejecutar el flujo normal de ingest (Pasos 1–7) completo antes de pasar al siguiente. Al terminar cada uno, informar brevemente:
+Para cada archivo seleccionado, ejecutar el flujo normal de ingest completo (Fase 1 análisis → Fase 2 generación) antes de pasar al siguiente. Al terminar cada uno, informar brevemente:
 
 > "✓ `nombre-archivo.pdf` → fuente `[[slug]]`, N páginas creadas, M actualizadas."
 

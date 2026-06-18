@@ -31,7 +31,15 @@ atlas log [-n N]               # log de mutaciones del wiki, derivado de git
 atlas session set "<T>"        # arranca sesión practice sobre T (calcula slugs bloqueados)
 atlas session reveal | clear   # válvula del firewall / reset
 atlas session check <archivo>  # ¿el firewall permite leer? (lo usa el hook PreToolUse)
+atlas forget <fuente>          # olvida una fuente; preserva entidades compartidas (--dry-run / -y)
+atlas ingest-status [--json]   # estado raw→wiki de cada fuente: new/stale/current/missing-raw
+atlas ingest-stamp <fuente>    # sella el hash del raw ingerido (lo usa /ingest --compile)
 ```
+
+`forget` quita el link de la fuente en cada página y borra solo las que quedan
+sin ninguna fuente (las que tienen otra sobreviven). `ingest-stamp` graba
+`ingested_sha256` en el frontmatter de la fuente; `ingest-status` compara ese hash
+con el raw actual para que `--compile` saltee lo que no cambió.
 
 ## Uso
 
