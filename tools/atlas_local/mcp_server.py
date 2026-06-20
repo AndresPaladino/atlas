@@ -51,17 +51,35 @@ def _page_summary(p: Page) -> dict:
 # ── consulta del grafo ──────────────────────────────────────────────────────────
 @mcp.tool()
 def atlas_query_index() -> dict:
-    """Catálogo del wiki: todas las páginas con slug, tipo, título, áreas y tags.
+    """Resumen del wiki: conteo, áreas, tipos y tags disponibles.
 
-    Marca cada página con `blocked` si hay una sesión /practice activa que la veda.
+    Devuelve metadatos agregados, NO la lista de páginas (evita volcar ~18k tokens).
+    Para encontrar páginas específicas usá atlas_search(query).
+    Para leer una página usá atlas_read_page(slug).
     """
     root = _repo_root()
     pages = load_wiki(root / "wiki")
     sess = session_mod.load_session(root)
-    blocked = set(sess.blocked_slugs) if sess.mode == "practice" and not sess.reveal else set()
+    blocked_count = 0
+    if sess.mode == "practice" and not sess.reveal:
+        blocked = set(sess.blocked_slugs)
+        blocked_count = sum(1 for p in pages if p.slug in blocked)
+
+    areas: set[str] = set()
+    tags: set[str] = set()
+    types: dict[str, int] = {}
+    for p in pages:
+        areas.update(p.areas)
+        tags.update(p.tags)
+        types[p.type] = types.get(p.type, 0) + 1
+
     return {
         "count": len(pages),
-        "pages": [{**_page_summary(p), "blocked": p.slug in blocked} for p in pages],
+        "blocked_count": blocked_count,
+        "areas": sorted(areas),
+        "tags": sorted(tags),
+        "types": types,
+        "hint": "Usá atlas_search(query) para encontrar páginas. atlas_read_page(slug) para leer el contenido.",
     }
 
 

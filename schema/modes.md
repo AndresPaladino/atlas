@@ -41,6 +41,7 @@ El agente debe **anunciar el modo activado** en su primera respuesta: `"[modo: p
 El usuario puede cambiar de modo en cualquier momento mediante:
 
 - **Slash command explícito**: `/query`, `/practice`, `/ingest`, `/lint`. Es la forma canónica.
+- **`/reveal`** — válvula especial (no cambia de modo): permite una lectura puntual bloqueada por el firewall de `/practice`, sin salir de la sesión Socrática. Se re-arma solo después.
 - **Frase de salida**:
   - `"salí del modo práctica"`, `"basta de Socrático"`, `"explicame directo"` → cambia a `/query`.
   - `"volvé al modo práctica"`, `"hagamos un ejercicio"` → cambia a `/practice`.

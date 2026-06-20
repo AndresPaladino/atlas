@@ -66,6 +66,26 @@ def test_forget_handles_sources_folder_prefix(wiki):
     assert "[[sources/notes-b]]" in eig
 
 
+def test_forget_handles_alias_in_wikilink(wiki):
+    """Tolera [[slug|alias]] en la línea de sources: del frontmatter."""
+    write_page(wiki, "sources", "exam-a",
+               "type: source\ntitle: Examen A\nsource_kind: notes\npath: raw/exam-a.pdf\n"
+               "areas: [math]\ncreated: 2026-01-01\nupdated: 2026-01-01")
+    write_page(wiki, "sources", "notes-b",
+               "type: source\ntitle: Notas B\nsource_kind: notes\npath: raw/notes-b.pdf\n"
+               "areas: [math]\ncreated: 2026-01-01\nupdated: 2026-01-01")
+    write_page(wiki, "concepts", "eigenvalue",
+               "type: concept\ntitle: Autovalor\nareas: [math]\n"
+               "sources: ['[[exam-a|Examen A]]', '[[notes-b|Notas B]]']\n"
+               "created: 2026-01-01\nupdated: 2026-01-01")
+    plan = plan_forget(load_wiki(wiki), "exam-a")
+    assert "wiki/concepts/eigenvalue.md" in plan.unlinked
+    apply_forget(wiki.parent, plan)
+    eig = (wiki / "concepts" / "eigenvalue.md").read_text(encoding="utf-8")
+    assert "exam-a" not in eig
+    assert "[[notes-b|Notas B]]" in eig
+
+
 def test_forget_unknown_source_is_empty(wiki):
     plan = plan_forget(load_wiki(wiki), "no-existe")
     assert plan.is_empty

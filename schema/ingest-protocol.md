@@ -12,10 +12,10 @@ Tomar una fuente cruda (PDF, notas, libro, paper) y poblar/actualizar el wiki co
 ## Apertura
 
 1. Leer `schema/purpose.md`: define el alcance (qué entra al wiki y qué se descarta). Filtrar los candidatos contra esto durante todo el análisis.
-2. Identificar la fuente:
+2. Identificar la fuente:\
    - Si el comando trae ruta: `Read` directo sobre el archivo en `raw/`.
    - Si trae descripción ("estas notas pegadas"): pedir el contenido.
-   - Si trae solo nombre ambiguo: listar `raw/` y preguntar cuál.
+   - Si trae solo nombre ambiguo o directamente no trae nada: usar `atlas ingest-status` en cli y preguntar cuál.
 3. Confirmar `source_kind` (book / paper / notes / lecture) con el usuario si no es inferible del nombre del archivo.
 
 El ingest es en **dos fases**: primero se analiza (Fase 1, no se escribe nada), recién después se genera (Fase 2). La separación mejora la calidad —reflexionar antes de escribir— y evita reescrituras.
@@ -86,10 +86,11 @@ No codificar el origen en el slug — el slug describe el contenido, no el conte
 Frontmatter: seguir el **frontmatter común** de `schema/wiki-conventions.md` (single source of truth) con `type: source` y los campos propios del tipo:
 
 - `source_kind: book | paper | notes | lecture`
-- `path: "raw/<archivo>"` — ruta al `.pdf` (fuente inmutable), sin subcarpetas.
-- `extracted: "raw/<archivo>.md"` — opcional: markdown cacheado leído en el ingest (`atlas extract`).
+- `path: "raw/<archivo>.pdf"` — ruta al `.pdf` (fuente inmutable). Campo de tracking: `atlas ingest-status` lo usa para saber qué PDFs ya tienen coverage.
+- `chunks: ["raw/<nombre>/01-intro.md", "raw/<nombre>/03-svd.md"]` — lista de chunks de `raw/<nombre>/` que Claude leyó para producir esta source. Permite calcular cobertura parcial cuando el libro es grande y se ingresa en varias pasadas. Omitir si el PDF no tiene carpeta de chunks.
+- `extracted: "raw/<archivo>.md"` — legacy: markdown monolítico (solo para docs sin chunks). No usar en docs segmentados; preferir `chunks:`.
 - `toc: "raw/<archivo>.toc.md"` — opcional: índice de segmentación, si el doc se segmentó.
-- `pages: "1-24"` — rango cubierto, opcional.
+- `pages: "1-24"` — rango de páginas cubierto, opcional.
 - `covers_concepts` / `covers_theorems` / `covers_methods` — wikilinks a lo que la fuente cubre.
 
 Cuerpo:
