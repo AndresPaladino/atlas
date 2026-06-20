@@ -160,6 +160,22 @@ def lint(wiki_dir: Path, scope: str | None = None,
                 f"updated={updated} pero el último commit es {git_date}",
             ))
 
+    # ── chunks-migration: extracted: apuntando a un chunk → migrar a chunks: ────
+    for p in pages:
+        if p.type != "source":
+            continue
+        extracted = str(p.frontmatter.get("extracted", "")).strip()
+        if not extracted:
+            continue
+        # Un chunk vive en raw/<nombre>/<archivo>.md (3 partes: raw / dir / file)
+        parts = Path(extracted).parts
+        if len(parts) >= 3 and parts[0] == "raw":
+            findings.append(Finding(
+                "chunks-migration", "warning", p.rel_path,
+                f"extracted: apunta a un chunk ({extracted}); "
+                f"migrá a chunks: [\"{extracted}\"] para tracking correcto",
+            ))
+
     # ── 5. source-not-ingested (PDFs de raw/ sin página source) ───────────────
     if raw_dir and raw_dir.is_dir():
         ingested = {

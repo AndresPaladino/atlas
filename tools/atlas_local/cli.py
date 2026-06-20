@@ -608,31 +608,74 @@ def forget(
 @app.command(name="ingest-status")
 def ingest_status_cmd(
     wiki: Optional[Path] = typer.Option(None, "--wiki", help="Directorio wiki/ (auto-detectado)."),
+    raw: Optional[Path] = typer.Option(None, "--raw", help="Directorio raw/ (auto-detectado)."),
     as_json: bool = typer.Option(False, "--json", help="Salida JSON (para --compile)."),
+    freshness: bool = typer.Option(False, "--freshness", help="Vista de frescura (new/stale/current por page)."),
 ) -> None:
-    """Estado de ingestión de cada fuente (new / stale / current / missing-raw)."""
+    """Inventario de PDFs en raw/ y su cobertura en wiki/sources/.
+
+    Por defecto muestra una fila por PDF: pending / partial (N/M chunks) / ingested.
+    Con --freshness muestra la vista legacy por page: new / stale / current / missing-raw.
+    """
     import json as _json
 
-    from .wiki.ingest import ingest_status
+    from .wiki.ingest import ingest_status, raw_ingest_status
     from .wiki.loader import load_wiki
 
     wiki_dir = _require_wiki(wiki)
-    statuses = ingest_status(load_wiki(wiki_dir), wiki_dir.parent)
+    pages = load_wiki(wiki_dir)
+
+    if freshness:
+        statuses = ingest_status(pages, wiki_dir.parent)
+        if as_json:
+            console.print_json(_json.dumps({"sources": [s.as_dict() for s in statuses]}))
+            return
+        if not statuses:
+            console.print("[green]No hay páginas de fuente todavía.[/green]")
+            return
+        color = {"current": "green", "new": "cyan", "stale": "yellow", "missing-raw": "red"}
+        table = Table(title="ingest-status --freshness (wiki/sources/ → raw/)")
+        table.add_column("estado")
+        table.add_column("fuente")
+        table.add_column("raw")
+        for s in statuses:
+            table.add_row(f"[{color.get(s.status, 'white')}]{s.status}[/]", s.slug, s.raw_path or "—")
+        console.print(table)
+        return
+
+    raw_dir = find_raw_dir(raw)
+    if not raw_dir.is_dir():
+        console.print(f"[red]No existe el directorio raw/: {raw_dir}[/red]")
+        raise typer.Exit(1)
+
+    statuses = raw_ingest_status(pages, raw_dir, wiki_dir.parent)
 
     if as_json:
-        console.print_json(_json.dumps({"sources": [s.as_dict() for s in statuses]}))
+        console.print_json(_json.dumps({"raw": [s.as_dict() for s in statuses]}))
         return
 
     if not statuses:
-        console.print("[green]No hay páginas de fuente todavía.[/green]")
+        console.print("[yellow]No hay entradas en raw/.atlas-extract.json todavía.[/yellow]")
         return
-    color = {"current": "green", "new": "cyan", "stale": "yellow", "missing-raw": "red"}
-    table = Table(title="ingest-status (raw → wiki)")
+
+    color = {"pending": "red", "partial": "yellow", "ingested": "green"}
+    table = Table(title="ingest-status (raw/ → wiki/sources/)")
     table.add_column("estado")
-    table.add_column("fuente")
-    table.add_column("raw")
+    table.add_column("PDF")
+    table.add_column("chunks", justify="right")
+    table.add_column("sources")
     for s in statuses:
-        table.add_row(f"[{color.get(s.status, 'white')}]{s.status}[/]", s.slug, s.raw_path or "—")
+        if s.n_chunks:
+            chunks_cell = f"{len(s.covered_chunks)}/{s.n_chunks}"
+        else:
+            chunks_cell = "—"
+        sources_cell = ", ".join(s.sources) if s.sources else "—"
+        table.add_row(
+            f"[{color.get(s.status, 'white')}]{s.status}[/]",
+            s.pdf_key,
+            chunks_cell,
+            sources_cell,
+        )
     console.print(table)
 
 

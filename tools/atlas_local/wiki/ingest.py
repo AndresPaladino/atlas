@@ -1,26 +1,35 @@
-"""Estado de ingestión raw→wiki: saltear fuentes ya ingeridas sin cambios.
+"""Estado de ingestión raw→wiki.
 
-Atlas ya hashea en la *extracción* (PDF→md, ver ``manifest.py``). Esto es el
-paralelo en la *ingestión* (raw→wiki): el hash del archivo raw que se ingirió se
-guarda en el frontmatter de la página de fuente como ``ingested_sha256:`` —
-git-tracked y visible, igual que el resto del estado de Atlas.
+Hay dos perspectivas complementarias:
 
-``ingest_status`` compara ese hash con el archivo raw actual. ``/ingest
---compile`` saltea las fuentes ``current`` (cero llamadas LLM redundantes);
-``stamp_source`` lo sella tras ingerir. Cálculo puro + escritura aislada.
+* ``raw_ingest_status`` — arranca desde ``raw/.atlas-extract.json`` (el Manifest
+  de extracción) y pregunta: ¿qué PDFs existen en raw/ y cuánto de cada uno ya
+  está cubierto por páginas en wiki/sources/?  Es la vista de inventario: muestra
+  pending / partial / ingested para *cada fuente*, incluso las que nunca tuvieron
+  una page en la wiki.
+
+* ``source_status`` / ``ingest_status`` — arranca desde wiki/sources/ y pregunta:
+  para cada page ya creada, ¿el raw que la originó cambió?  Es la vista de
+  frescura: new / stale / current / missing-raw.  La usa ``ingest-stamp`` y el
+  flujo --compile para saltear re-ingestas.
+
+Las dos vistas son complementarias: la primera descubre huecos, la segunda detecta
+drift en lo que ya existe.
 """
 
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
-from ..manifest import sha256_file
+from ..manifest import Manifest, sha256_file
 from .loader import Page
 
 _HASH_LINE = re.compile(r"^ingested_sha256:.*\n", re.MULTILINE)
 
+
+# ── vista de frescura (wiki/sources/ → raw/) ─────────────────────────────────
 
 @dataclass
 class SourceStatus:
@@ -35,10 +44,18 @@ class SourceStatus:
 def _raw_file(repo_root: Path, page: Page) -> Path | None:
     """Archivo raw cuyo cambio define si hay que re-ingerir.
 
-    Prefiere ``extracted`` (el .md, lo que realmente lee el ingest y está
-    versionado); cae a ``path`` (el .pdf, puede no estar en esta máquina).
+    Para sources con chunks: prefiere el primer chunk listado en ``chunks``
+    (frontmatter), o cae al campo ``extracted`` (puede ser el .md monolítico
+    legacy), o al ``path`` (el .pdf).
     """
-    candidates = [page.frontmatter.get(k) for k in ("extracted", "path")]
+    fm = page.frontmatter
+    # chunks lista explícita → usamos el primero como proxy de frescura del raw
+    chunks = fm.get("chunks") or []
+    if chunks:
+        p = repo_root / str(chunks[0])
+        if p.exists():
+            return p
+    candidates = [fm.get(k) for k in ("extracted", "path")]
     candidates = [repo_root / str(v) for v in candidates if v]
     for p in candidates:
         if p.exists():
@@ -52,22 +69,152 @@ def source_status(repo_root: Path, page: Page) -> SourceStatus:
     if raw is None or not raw.exists():
         return SourceStatus(page.slug, "missing-raw", rel)
     recorded = page.frontmatter.get("ingested_sha256")
-    if not recorded:
+    if not isinstance(recorded, str) or len(recorded) != 64:
         return SourceStatus(page.slug, "new", rel)
     status = "current" if sha256_file(raw) == recorded else "stale"
     return SourceStatus(page.slug, status, rel)
 
 
 def ingest_status(pages: list[Page], repo_root: Path) -> list[SourceStatus]:
-    """Estado de ingestión de cada página de ``wiki/sources/``."""
+    """Vista de frescura: estado de cada página ya existente en wiki/sources/."""
     return [source_status(repo_root, p) for p in pages if p.folder == "sources"]
 
+
+# ── vista de inventario (raw/.atlas-extract.json → wiki/sources/) ────────────
+
+@dataclass
+class RawStatus:
+    """Estado de ingestión de un PDF visto desde raw/."""
+    pdf_key: str           # rel a raw/, ej. "DDSE.pdf"
+    status: str            # pending | partial | ingested
+    n_chunks: int          # 0 si no hay carpeta de chunks
+    covered_chunks: list[str] = field(default_factory=list)   # nombres de chunk cubiertos
+    sources: list[str] = field(default_factory=list)          # slugs en wiki/sources/
+
+    @property
+    def uncovered_chunks_count(self) -> int:
+        return max(0, self.n_chunks - len(self.covered_chunks))
+
+    def as_dict(self) -> dict:
+        return {
+            "pdf_key": self.pdf_key,
+            "status": self.status,
+            "n_chunks": self.n_chunks,
+            "covered_chunks": self.covered_chunks,
+            "uncovered_chunks": self.uncovered_chunks_count,
+            "sources": self.sources,
+        }
+
+
+def _chunks_covered_by(pages: list[Page], chunks_dir: str, repo_root: Path) -> dict[str, list[str]]:
+    """Para cada chunk en chunks_dir, devuelve los slugs de sources que lo cubren.
+
+    Busca en el frontmatter de cada source:
+    - ``chunks``: lista de rutas relativas al repo (nueva convención)
+    - ``extracted``: ruta única al .md (convención legacy — puede ser el monolítico
+      o un chunk individual)
+
+    Devuelve {chunk_filename: [slug, ...]}
+    """
+    covered: dict[str, list[str]] = {}
+    chunks_prefix = chunks_dir.rstrip("/") + "/"   # ej. "raw/DDSE/"
+
+    for page in pages:
+        if page.folder != "sources":
+            continue
+        fm = page.frontmatter
+
+        # nueva convención: chunks es lista de rutas
+        chunk_list = fm.get("chunks") or []
+        for c in chunk_list:
+            c_str = str(c)
+            if c_str.startswith(chunks_prefix):
+                fname = c_str[len(chunks_prefix):]
+                covered.setdefault(fname, []).append(page.slug)
+
+        # legado: extracted apunta a un único archivo dentro de chunks_dir
+        extracted = fm.get("extracted")
+        if extracted:
+            e_str = str(extracted)
+            if e_str.startswith(chunks_prefix):
+                fname = e_str[len(chunks_prefix):]
+                covered.setdefault(fname, []).append(page.slug)
+
+    return covered
+
+
+def raw_ingest_status(pages: list[Page], raw_dir: Path, repo_root: Path) -> list[RawStatus]:
+    """Vista de inventario: estado de ingestión de cada PDF en raw/.
+
+    Arranca desde el Manifest (raw/.atlas-extract.json) para conocer qué PDFs
+    existen y qué artefactos produjeron.  Para cada PDF calcula:
+
+    - pending   : ninguna source en wiki/ tiene path: apuntando a este PDF
+    - partial   : hay sources pero no todos los chunks están cubiertos
+    - ingested  : hay al menos una source (y si hay chunks, todos están cubiertos)
+    """
+    manifest = Manifest.load(raw_dir)
+
+    # índice: path: "raw/X.pdf" → slugs de sources que lo declaran
+    path_to_slugs: dict[str, list[str]] = {}
+    for page in pages:
+        if page.folder != "sources":
+            continue
+        raw_path = page.frontmatter.get("path")
+        if raw_path:
+            path_to_slugs.setdefault(str(raw_path), []).append(page.slug)
+
+    results: list[RawStatus] = []
+    for pdf_key, entry in manifest._entries.items():
+        slugs = path_to_slugs.get(f"raw/{pdf_key}", [])
+
+        if not entry.chunks_dir:
+            # PDF sin chunks: pending o ingested
+            status = "ingested" if slugs else "pending"
+            results.append(RawStatus(
+                pdf_key=pdf_key,
+                status=status,
+                n_chunks=0,
+                sources=slugs,
+            ))
+            continue
+
+        # PDF con carpeta de chunks
+        chunks_dir_rel = f"raw/{entry.chunks_dir}"   # ej. "raw/DDSE"
+        chunks_dir_abs = raw_dir / entry.chunks_dir
+        all_chunks = sorted(
+            p.name for p in chunks_dir_abs.iterdir()
+            if p.is_file() and p.suffix == ".md"
+        ) if chunks_dir_abs.exists() else []
+
+        covered_map = _chunks_covered_by(pages, chunks_dir_rel, repo_root)
+        covered = [c for c in all_chunks if c in covered_map]
+
+        if not slugs:
+            status = "pending"
+        elif len(covered) >= len(all_chunks) and all_chunks:
+            status = "ingested"
+        else:
+            status = "partial"
+
+        results.append(RawStatus(
+            pdf_key=pdf_key,
+            status=status,
+            n_chunks=len(all_chunks),
+            covered_chunks=covered,
+            sources=slugs,
+        ))
+
+    return sorted(results, key=lambda r: (r.status != "pending", r.status != "partial", r.pdf_key))
+
+
+# ── stamp ─────────────────────────────────────────────────────────────────────
 
 def _insert_frontmatter_line(text: str, line: str) -> str:
     """Inserta ``line`` justo antes del ``---`` de cierre del frontmatter."""
     lines = text.splitlines(keepends=True)
     if not lines or lines[0].rstrip("\r\n") != "---":
-        return line + text  # sin frontmatter (no debería pasar en una source)
+        return line + text
     for i in range(1, len(lines)):
         if lines[i].rstrip("\r\n") == "---":
             lines.insert(i, line)

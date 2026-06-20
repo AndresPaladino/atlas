@@ -32,8 +32,10 @@ _WIKILINK = re.compile(r"\[\[([^\]|]+)(?:\|[^\]]+)?\]\]")
 
 
 def normalize_slug(target: str) -> str:
-    """``[[folder/slug|alias]]`` → ``slug``. Tolera espacios y la carpeta."""
+    """``[[folder/slug|alias]]`` → ``slug``. Tolera espacios, carpeta y alias."""
     target = target.strip()
+    if "|" in target:
+        target = target.split("|", 1)[0]
     if "/" in target:
         target = target.rsplit("/", 1)[-1]
     return target.strip()

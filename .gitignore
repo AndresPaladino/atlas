@@ -14,6 +14,11 @@
 *.swp
 *.swo
 
+# Obsidian — estado de UI por máquina (cambia solo al abrir el grafo/ventanas)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/graph.json
+
 # Raw sources — fuentes binarias / pesadas, no van al repo
 raw/**/*.pdf
 raw/**/*.epub
