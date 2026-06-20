@@ -16,12 +16,16 @@ from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
+import yaml as _yaml
+
+from .wiki import forget as forget_mod
+from .wiki import index as index_mod
 from .wiki import ingest as ingest_mod
 from .wiki import lint as lint_mod
 from .wiki import session as session_mod
 from .wiki.loader import Page, load_wiki
 from .wiki.paths import find_repo_root
-from .wiki.schema import validate_page
+from .wiki.schema import FOLDER_BY_TYPE, validate_page
 
 logger = logging.getLogger("atlas_mcp")
 
@@ -149,6 +153,67 @@ def atlas_ingest_status() -> dict:
     root = _repo_root()
     statuses = ingest_mod.ingest_status(load_wiki(root / "wiki"), root)
     return {"sources": [s.as_dict() for s in statuses]}
+
+
+# ── escritura ─────────────────────────────────────────────────────────────────
+@mcp.tool()
+def atlas_write_page(slug: str, frontmatter: dict, body: str) -> dict:
+    """Crea o actualiza una página wiki. Valida el frontmatter antes de escribir.
+
+    El campo ``type`` del frontmatter determina la carpeta destino
+    (concept→concepts, source→sources, etc.). Si la página existe, la sobreescribe.
+    Devuelve ``errors`` si la validación falla (nada se escribe).
+    """
+    root = _repo_root()
+    ptype = frontmatter.get("type") or ""
+    folder = FOLDER_BY_TYPE.get(ptype, ptype + "s" if ptype else "concepts")
+    path = root / "wiki" / folder / f"{slug}.md"
+
+    fake = Page(
+        path=path, rel_path=f"wiki/{folder}/{slug}.md", slug=slug,
+        folder=folder, frontmatter=frontmatter, fm_error=None,
+        body=body, body_offset=1,
+    )
+    errors = validate_page(fake)
+    if errors:
+        return {"written": False, "slug": slug, "errors": errors}
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"---\n{_yaml.dump(frontmatter, allow_unicode=True, sort_keys=False)}---\n\n{body}")
+    return {"written": True, "slug": slug, "path": f"wiki/{folder}/{slug}.md"}
+
+
+@mcp.tool()
+def atlas_index() -> dict:
+    """Regenera wiki/index.md y los MOCs de área desde el filesystem."""
+    changed = index_mod.generate(_repo_root() / "wiki")
+    return {"changed": changed}
+
+
+@mcp.tool()
+def atlas_forget(source_slug: str, dry_run: bool = False) -> dict:
+    """Olvida una fuente: quita su link de cada página y borra las que quedan sin fuentes.
+
+    Con ``dry_run=True`` reporta el plan sin tocar nada.
+    """
+    root = _repo_root()
+    wiki_dir = root / "wiki"
+    plan = forget_mod.plan_forget(load_wiki(wiki_dir), source_slug)
+    if plan.is_empty:
+        return {"found": False, "source_slug": source_slug}
+    result = {
+        "found": True,
+        "source_slug": source_slug,
+        "source_page": plan.source_page,
+        "unlinked": plan.unlinked,
+        "deleted": plan.deleted,
+        "dry_run": dry_run,
+    }
+    if not dry_run:
+        touched = forget_mod.apply_forget(root, plan)
+        index_mod.generate(wiki_dir)
+        result["touched"] = touched
+    return result
 
 
 # ── sesión / firewall ───────────────────────────────────────────────────────────

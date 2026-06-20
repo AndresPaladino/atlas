@@ -54,13 +54,15 @@ uv tool install '.[mcp]'        # o: pip install 'atlas[mcp]'
 ATLAS_ROOT=/ruta/al/repo atlas-mcp
 ```
 
-Tools expuestas (I/O JSON, sin Rich): `atlas_query_index`, `atlas_read_page`,
-`atlas_search`, `atlas_lint`, `atlas_validate`, `atlas_ingest_status`, y la familia
-`atlas_session_*` (`set`/`mode`/`reveal`/`clear`/`show`). El **firewall de
-`/practice` se enforça en el server**: `atlas_read_page` consulta el estado de
-sesión y deniega las páginas bloqueadas, así que ningún cliente lo puede saltar.
+Tools de lectura: `atlas_query_index`, `atlas_read_page`, `atlas_search`,
+`atlas_lint`, `atlas_validate`, `atlas_ingest_status`.
+Tools de escritura: `atlas_write_page`, `atlas_index`, `atlas_forget`.
+Control de sesión: `atlas_session_set/mode/reveal/clear/show`.
+El **firewall de `/practice` se enforça en el server**: `atlas_read_page` consulta
+el estado de sesión y deniega las páginas bloqueadas, así que ningún cliente lo puede saltar.
 
-Config para Claude Desktop (`claude_desktop_config.json`):
+**Claude Desktop** — editar `claude_desktop_config.json`
+(macOS: `~/Library/Application Support/Claude/`; Linux: `~/.config/Claude/`):
 
 ```json
 {
@@ -72,6 +74,20 @@ Config para Claude Desktop (`claude_desktop_config.json`):
   }
 }
 ```
+
+`setup.sh` configura esto automáticamente si Claude Desktop está instalado.
+
+**Codex CLI** — agregar en `~/.codex/config.yaml` (o `codex.yaml` en la raíz del proyecto):
+
+```yaml
+mcp_servers:
+  - name: atlas
+    command: atlas-mcp
+    env:
+      ATLAS_ROOT: /ruta/al/repo
+```
+
+> El path y formato exacto de Codex puede variar — verificar contra la versión instalada.
 
 ## Uso
 
