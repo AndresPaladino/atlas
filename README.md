@@ -6,6 +6,39 @@
 
 Sistema personal de conocimiento construido sobre [Claude Code](https://claude.ai/code). Mantiene un wiki interconectado que se popula, consulta y practica con sesiones de Claude. Incluye un CLI (`atlas`) para extracción de PDFs y mantenimiento del grafo.
 
+```mermaid
+flowchart LR
+    U((vos))
+
+    subgraph raw["raw/"]
+        PDFs["PDFs · apuntes"]
+    end
+
+    subgraph wiki["wiki/ — grafo de conocimiento"]
+        S["sources/"]
+        C["concepts · theorems · methods"]
+    end
+
+    subgraph claude["Claude Code"]
+        I["/ingest — poblar"]
+        Q["/query — consultar"]
+        P["/practice — Socrático 🔒"]
+    end
+
+    subgraph maint["atlas CLI — mantenimiento"]
+        M["validate · lint · index"]
+    end
+
+    U -->|"subís un PDF"| raw
+    raw -->|"atlas extract"| S
+    S -->|"/ingest"| C
+    C -->|"lee"| Q
+    C -.->|"firewall (no spoilers)"| P
+    U -->|"tenés una duda"| Q
+    U -->|"querés practicar"| P
+    wiki <-->|"audita / regenera"| maint
+```
+
 ## Instalación
 
 ```bash
