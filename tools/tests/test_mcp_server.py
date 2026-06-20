@@ -14,13 +14,13 @@ def atlas_root(wiki, monkeypatch):
     return wiki.parent
 
 
-def test_query_index_lists_pages(atlas_root):
+def test_query_index_summary(atlas_root):
     out = srv.atlas_query_index()
-    slugs = {p["slug"] for p in out["pages"]}
     assert out["count"] == 2
-    assert {"gradient", "greens-theorem"} <= slugs
-    # sin sesión practice, nada bloqueado
-    assert all(not p["blocked"] for p in out["pages"])
+    assert out["blocked_count"] == 0
+    assert "areas" in out and "tags" in out and "types" in out
+    # no debe incluir lista de páginas (evita volcar ~18k tokens)
+    assert "pages" not in out
 
 
 def test_read_page_returns_body(atlas_root):
@@ -38,9 +38,9 @@ def test_firewall_denies_blocked_page(atlas_root):
     out = srv.atlas_read_page("greens-theorem")
     assert out["denied"] is True
     assert "greens-theorem" in out["reason"]
-    # el índice lo marca bloqueado
-    idx = {p["slug"]: p for p in srv.atlas_query_index()["pages"]}
-    assert idx["greens-theorem"]["blocked"] is True
+    # el índice reporta páginas bloqueadas en el conteo
+    idx = srv.atlas_query_index()
+    assert idx["blocked_count"] >= 1
 
 
 def test_session_clear_lifts_firewall(atlas_root):
