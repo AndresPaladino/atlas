@@ -39,7 +39,36 @@ else
   bash "$ATLAS_PATH/tools/install.sh"
 fi
 
-# ── 4. Listo ──────────────────────────────────────────────────────────────────
+# ── 4. Configurar cliente MCP (Claude Desktop, si está instalado) ─────────────
+python3 - "$ATLAS_PATH" <<'PYEOF'
+import json, os, sys
+from pathlib import Path
+
+atlas_root = sys.argv[1]
+entry = {"command": "atlas-mcp", "env": {"ATLAS_ROOT": atlas_root}}
+
+candidates = [
+    Path.home() / "Library/Application Support/Claude/claude_desktop_config.json",  # macOS
+    Path.home() / ".config/Claude/claude_desktop_config.json",                       # Linux
+]
+cfg_path = next((p for p in candidates if p.parent.exists()), None)
+if cfg_path is None:
+    print("   ℹ  Claude Desktop no detectado. Config MCP manual:")
+    print(f'      {{"mcpServers": {{"atlas": {json.dumps(entry)}}}}}')
+    sys.exit(0)
+
+cfg = json.loads(cfg_path.read_text()) if cfg_path.exists() else {}
+cfg.setdefault("mcpServers", {})
+if cfg["mcpServers"].get("atlas") == entry:
+    print("   ✓ Claude Desktop MCP ya configurado")
+    sys.exit(0)
+
+cfg["mcpServers"]["atlas"] = entry
+cfg_path.write_text(json.dumps(cfg, indent=2, ensure_ascii=False))
+print(f"   ✓ Claude Desktop MCP configurado en {cfg_path}")
+PYEOF
+
+# ── 5. Listo ──────────────────────────────────────────────────────────────────
 echo ""
 echo "✅  Atlas listo. Abrí Claude Code en este directorio para empezar."
 echo "   → Tirá PDFs en raw/ y corré /ingest para poblar el wiki."
