@@ -1,5 +1,9 @@
 # Atlas
 
+[![CI](https://github.com/AndresPaladino/atlas/actions/workflows/ci.yml/badge.svg)](https://github.com/AndresPaladino/atlas/actions/workflows/ci.yml)
+[![Python ≥3.10](https://img.shields.io/badge/python-%E2%89%A53.10-blue)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Sistema personal de conocimiento construido sobre [Claude Code](https://claude.ai/code). Mantiene un wiki interconectado que se popula, consulta y practica con sesiones de Claude. Incluye un CLI (`atlas`) para extracción de PDFs y mantenimiento del grafo.
 
 ## Instalación

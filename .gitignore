@@ -6,6 +6,9 @@
 # Claude worktrees (heavy, machine-specific)
 .claude/worktrees/
 
+# Comando autopush — contiene remotes/lógica personal, no va al repo público
+.claude/commands/autopush.md
+
 # Local Claude settings (contain absolute paths)
 .claude/settings.local.json
 
