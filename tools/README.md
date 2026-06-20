@@ -29,8 +29,10 @@ atlas lint [scope] [--json]    # audita el wiki: orphans, links/aristas rotos, s
 atlas index                    # regenera wiki/index.md y los MOCs desde el filesystem
 atlas log [-n N]               # log de mutaciones del wiki, derivado de git
 atlas session set "<T>"        # arranca sesión practice sobre T (calcula slugs bloqueados)
+atlas session mode <modo>      # cambia modo (query|practice|ingest|lint); cualquier modo ≠ practice levanta el firewall
 atlas session reveal | clear   # válvula del firewall / reset
 atlas session check <archivo>  # ¿el firewall permite leer? (lo usa el hook PreToolUse)
+atlas session show             # muestra modo, tema T y slugs bloqueados actuales
 atlas forget <fuente>          # olvida una fuente; preserva entidades compartidas (--dry-run / -y)
 atlas ingest-status [--json]   # estado raw→wiki de cada fuente: new/stale/current/missing-raw
 atlas ingest-stamp <fuente>    # sella el hash del raw ingerido (lo usa /ingest --compile)
