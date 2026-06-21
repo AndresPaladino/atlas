@@ -99,7 +99,6 @@ atlas extract raw/foo.pdf      # un PDF puntual
 atlas extract --captions       # + describe figuras (necesita Ollama)
 atlas extract --force          # re-extrae todo
 atlas extract --no-segment     # no segmentar aunque el doc sea grande
-atlas extract --chunk-tokens 4000  # tamaño objetivo de cada chunk (default 3000)
 ```
 
 ## Segmentación de docs grandes
@@ -120,6 +119,6 @@ raw/Notas/              # chunks por sección (.md), nunca cortando un tema a la
 - Cada chunk arranca con un breadcrumb (fuente, rango de páginas, ruta de headings) para ser legible en aislamiento.
 - Los docs chicos (exámenes, papers cortos) no se segmentan: queda solo el `.md`, como antes.
 - El TOC y los chunks **se versionan en git** (igual que el `.md` y el manifest): se extrae en una máquina y se hace `pull` en otra sin re-extraer. Las imágenes siguen siendo locales.
-- Flags: `--segment` fuerza la segmentación, `--no-segment` la inhibe, `--chunk-tokens N` ajusta el tamaño objetivo.
+- Flags: `--segment` fuerza la segmentación, `--no-segment` la inhibe. El tamaño objetivo de chunk es fijo (3000 tokens).
 
 La página `wiki/sources/<slug>.md` deriva su "Mapa de coverage" directo del TOC, así que el grafo apunta a las secciones exactas sin recargar el documento entero.
