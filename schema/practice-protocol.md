@@ -50,6 +50,7 @@ Conceptualmente, durante una sesión sobre tema **T** el agente **no debe leer**
 Operaciones **permitidas** durante `/practice`:
 
 - Leer `wiki/areas/*.md` (mapas de área de alto nivel, sin contenido pedagógico).
+- Leer `wiki/assessments/*.md` (exámenes/parciales): son la fuente natural de ejercicios. Su `evaluates:` apunta a los conceptos de **T** → usarlos para sacar problemas, no para darle la solución al usuario.
 - Listar nombres de archivo vía `Glob` u operación equivalente (sin abrir contenido).
 - Leer páginas wiki de temas **distintos a T** (para conectar con conocimiento previo).
 - Leer `schema/practice-protocol.md` (este archivo).

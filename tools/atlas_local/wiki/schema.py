@@ -15,7 +15,10 @@ from .loader import Page
 # Tipos válidos de página (una página tiene exactamente uno). Coincide con las
 # carpetas bajo wiki/ salvo index/log/README, que no son páginas de contenido.
 VALID_TYPES = frozenset(
-    {"concept", "theorem", "method", "example", "comparison", "source", "area"}
+    {
+        "concept", "theorem", "method", "example", "comparison",
+        "source", "assessment", "area",
+    }
 )
 
 # Áreas con MOC propio, en orden canónico (lo usa `atlas index` para listar los
@@ -35,6 +38,7 @@ _REQUIRED_BY_TYPE: dict[str, tuple[str, ...]] = {
     "example": ("illustrates", "difficulty"),
     "comparison": ("compares",),
     "source": ("source_kind", "path"),
+    "assessment": ("assessment_kind", "path"),
     "area": ("tag_prefix",),
 }
 
@@ -46,10 +50,12 @@ FOLDER_BY_TYPE: dict[str, str] = {
     "example": "examples",
     "comparison": "comparisons",
     "source": "sources",
+    "assessment": "assessments",
     "area": "areas",
 }
 
 _VALID_SOURCE_KINDS = frozenset({"book", "paper", "notes", "lecture"})
+_VALID_ASSESSMENT_KINDS = frozenset({"exam", "parcial", "practica"})
 
 
 def required_fields(page_type: str | None) -> tuple[str, ...]:
@@ -97,6 +103,13 @@ def validate_page(page: Page) -> list[str]:
         if kind is not None and kind not in _VALID_SOURCE_KINDS:
             errors.append(
                 f"source_kind inválido: {kind!r} (válidos: {sorted(_VALID_SOURCE_KINDS)})"
+            )
+    if ptype == "assessment":
+        kind = page.frontmatter.get("assessment_kind")
+        if kind is not None and kind not in _VALID_ASSESSMENT_KINDS:
+            errors.append(
+                f"assessment_kind inválido: {kind!r} "
+                f"(válidos: {sorted(_VALID_ASSESSMENT_KINDS)})"
             )
     if ptype == "example":
         diff = page.frontmatter.get("difficulty")

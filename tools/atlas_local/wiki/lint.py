@@ -20,10 +20,11 @@ from .schema import validate_page
 _EDGE_KEYS = (
     "requires", "unlocks", "sources", "illustrates", "compares",
     "covers_concepts", "covers_theorems", "covers_methods",
+    "evaluates", "assessed_by",
 )
 
 # Tipos que son raíces del grafo: nunca son orphans.
-_ROOT_TYPES = frozenset({"area", "source"})
+_ROOT_TYPES = frozenset({"area", "source", "assessment"})
 
 
 @dataclass
@@ -140,6 +141,25 @@ def lint(wiki_dir: Path, scope: str | None = None,
                     f"no tiene [[{p.slug}]] en unlocks",
                 ))
 
+    # ── 4b. assessment-symmetry (evaluates ⇄ assessed_by) ─────────────────────
+    for p in pages:
+        for tgt in p.edge("evaluates"):
+            other = by_slug.get(tgt)
+            if other is not None and p.slug not in other.edge("assessed_by"):
+                findings.append(Finding(
+                    "assessment-symmetry", "warning", p.rel_path,
+                    f"[[{p.slug}]] evaluates [[{tgt}]] pero [[{tgt}]] "
+                    f"no tiene [[{p.slug}]] en assessed_by",
+                ))
+        for tgt in p.edge("assessed_by"):
+            other = by_slug.get(tgt)
+            if other is not None and p.slug not in other.edge("evaluates"):
+                findings.append(Finding(
+                    "assessment-symmetry", "warning", p.rel_path,
+                    f"[[{p.slug}]] assessed_by [[{tgt}]] pero [[{tgt}]] "
+                    f"no tiene [[{p.slug}]] en evaluates",
+                ))
+
     # ── 6 & 7 ya cubiertos por schema (statement_form, when_to_use/fails_when) ─
 
     # ── 8. concept-implicit (≥3 menciones sin página) ─────────────────────────
@@ -180,14 +200,14 @@ def lint(wiki_dir: Path, scope: str | None = None,
     if raw_dir and raw_dir.is_dir():
         ingested = {
             str(p.frontmatter.get("path", "")).strip()
-            for p in pages if p.type == "source"
+            for p in pages if p.type in ("source", "assessment")
         }
         for pdf in sorted(raw_dir.rglob("*.pdf")):
             rel = pdf.relative_to(repo_root).as_posix()
             if rel not in ingested:
                 findings.append(Finding(
                     "source-not-ingested", "warning", rel,
-                    "PDF en raw/ sin página en wiki/sources/ que lo referencie",
+                    "PDF en raw/ sin página en wiki/sources|assessments/ que lo referencie",
                 ))
 
     order = {"error": 0, "warning": 1}

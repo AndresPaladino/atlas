@@ -48,6 +48,27 @@ def test_bad_type(wiki):
     assert any("type" in e for e in validate_page(p))
 
 
+def test_assessment_valid(wiki):
+    p = _page(wiki, "assessments", "exam1",
+              "type: assessment\ntitle: E\nassessment_kind: exam\nareas: [math]\n"
+              "path: raw/e.pdf\ncreated: 2026-01-01\nupdated: 2026-01-01")
+    assert [e for e in validate_page(p) if not e.startswith("warn:")] == []
+
+
+def test_assessment_requires_kind_and_path(wiki):
+    p = _page(wiki, "assessments", "exam2",
+              "type: assessment\ntitle: E\nareas: [math]\ncreated: 2026-01-01\nupdated: 2026-01-01")
+    errs = validate_page(p)
+    assert any("assessment_kind" in e for e in errs) and any("path" in e for e in errs)
+
+
+def test_assessment_bad_kind(wiki):
+    p = _page(wiki, "assessments", "exam3",
+              "type: assessment\ntitle: E\nassessment_kind: quiz\nareas: [math]\n"
+              "path: raw/e.pdf\ncreated: 2026-01-01\nupdated: 2026-01-01")
+    assert any("assessment_kind inválido" in e for e in validate_page(p))
+
+
 def test_wrong_folder(wiki):
     # un theorem viviendo en concepts/
     p = _page(wiki, "concepts", "mis", "type: theorem\ntitle: Mis\nareas: [math]\nstatement_form: 'if a then b'\ncreated: 2026-01-01\nupdated: 2026-01-01")

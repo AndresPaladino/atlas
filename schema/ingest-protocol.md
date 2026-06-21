@@ -16,7 +16,9 @@ Tomar una fuente cruda (PDF, notas, libro, paper) y poblar/actualizar el wiki co
    - Si el comando trae ruta: `Read` directo sobre el archivo en `raw/`.
    - Si trae descripción ("estas notas pegadas"): pedir el contenido.
    - Si trae solo nombre ambiguo o directamente no trae nada: usar `atlas ingest-status` en cli y preguntar cuál.
-3. Confirmar `source_kind` (book / paper / notes / lecture) con el usuario si no es inferible del nombre del archivo.
+3. Clasificar la fuente — bifurca el resto del protocolo:
+   - **Material de estudio** (libro, paper, notas, clase) → página `type: source` en `wiki/sources/`. Confirmar `source_kind` (book / paper / notes / lecture) si no es inferible del nombre.
+   - **Evaluación** (examen, parcial, práctico — típicamente slug `*-exam-*` / `*-parcial-*`) → página `type: assessment` en `wiki/assessments/`. Confirmar `assessment_kind` (exam / parcial / practica) y `course` (sigla). Un examen **no** es fuente de conocimiento: usa `evaluates:` (no `covers_*`) y cada concepto evaluado recibe `assessed_by:` apuntando de vuelta (relación bidireccional, ver `wiki-conventions.md`).
 
 El ingest es en **dos fases**: primero se analiza (Fase 1, no se escribe nada), recién después se genera (Fase 2). La separación mejora la calidad —reflexionar antes de escribir— y evita reescrituras.
 
@@ -112,15 +114,30 @@ Si el doc tiene `raw/<nombre>.toc.md`, esta tabla se deriva casi directo de él:
 
 ---
 
+## Paso 4-bis — Si la fuente es una evaluación
+
+En vez de `wiki/sources/`, crear `wiki/assessments/<slug>.md` con `type: assessment`.
+
+- Slug: `<curso>-<kind><fecha>`, p.ej. `sistop-exam-dic2024`, `gal2-parcial-may2019`.
+- Frontmatter propio del tipo (ver `wiki-conventions.md`): `assessment_kind`, `course`, `path`, `evaluates` (en lugar de `covers_*`), `extracted`/`ingested_sha256` opcionales.
+- Cuerpo: mismo "Mapa de coverage" pero por problema (`| Problema | Concepto wiki |`).
+- En el Paso 5, cada concepto evaluado se trata por **Caso A-assessment** (abajo): no toca `sources:`, append a `assessed_by:`.
+
 ## Paso 5 — Para cada concepto del mapa
 
 Según el estado ya determinado en el análisis (Paso 2):
 
-### Caso A: existe
+### Caso A: existe (fuente de conocimiento)
 
 - Leer la página existente.
 - Append la fuente nueva a `sources:` del frontmatter.
 - Si la fuente trae detalles que la página no tenía (ej: enunciado más preciso, ejemplo nuevo, observación) → agregar al cuerpo con cita explícita.
+- Actualizar `updated:`.
+
+### Caso A-assessment: existe (evaluación)
+
+- Leer la página existente.
+- Append el assessment a `assessed_by:` (no a `sources:`). El lado `evaluates:` del assessment ya apunta acá → simetría (la verifica `atlas lint`).
 - Actualizar `updated:`.
 
 ### Caso B: no existe
