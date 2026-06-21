@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import re
-import shutil
 from pathlib import Path
 from typing import Optional
 
@@ -255,10 +254,7 @@ def extract(
     captions: bool = typer.Option(False, "--captions", help="Generar captions de figuras (requiere Ollama)."),
     force: bool = typer.Option(False, "--force", help="Re-extraer aunque ya esté converted."),
     push: bool = typer.Option(False, "--push", help="Commit y push de los .md y manifest al terminar."),
-    cache: Optional[Path] = typer.Option(None, "--cache", help="Directorio para caché de modelos (default: misma unidad que raw/, o $ATLAS_CACHE)."),
     segment: Optional[bool] = typer.Option(None, "--segment/--no-segment", help="Forzar/inhibir la segmentación en chunks+TOC (default: auto por umbral de tamaño)."),
-    chunk_tokens: int = typer.Option(seg_mod.DEFAULT_TARGET_TOKENS, "--chunk-tokens", help="Tamaño objetivo de cada chunk en tokens estimados."),
-    batch_pages: int = typer.Option(0, "--batch-pages", help="PDFs con más páginas que esto se extraen por lotes. 0 = usar el del perfil --throttle."),
     throttle: str = typer.Option(DEFAULT_THROTTLE, "--throttle", help="Perfil de uso de recursos: low|medium|full-throttle (default: medium)."),
 ) -> None:
     """Convierte PDFs de raw/ a markdown (sibling .md) y actualiza el manifest."""
@@ -269,7 +265,7 @@ def extract(
         console.print(f"[red]No existe el directorio raw/: {raw_dir}[/red]")
         raise typer.Exit(1)
 
-    cache_dir = cache.expanduser().resolve() if cache else _resolve_cache_dir(raw_dir)
+    cache_dir = _resolve_cache_dir(raw_dir)  # override con $ATLAS_CACHE
 
     device = detect_device()
     tier = resolve_tier(device)
@@ -298,8 +294,7 @@ def extract(
         console.print(f"[red]--throttle debe ser low, medium o full-throttle.[/red]")
         raise typer.Exit(1)
 
-    # batch_pages=0 significa "usar el del perfil"; cualquier otro valor explícito gana.
-    effective_batch = profile.batch_pages if batch_pages == 0 else batch_pages
+    effective_batch = profile.batch_pages
     _apply_throttle(profile)
 
     _preflight(targets, cache_dir, raw_dir)
@@ -359,7 +354,7 @@ def extract(
                 seg = seg_mod.segment_markdown(
                     result.markdown, md_path=md_path,
                     source_rel=rel, n_pages=result.n_pages,
-                    target_tokens=chunk_tokens,
+                    target_tokens=seg_mod.DEFAULT_TARGET_TOKENS,
                 )
 
             manifest.record(
@@ -383,113 +378,6 @@ def extract(
 
     if push and extracted:
         _git_push(raw_dir, extracted)
-
-
-# ── migrate-images ─────────────────────────────────────────────────────────────
-@app.command(name="migrate-images")
-def migrate_images(
-    raw: Optional[Path] = typer.Option(None, "--raw", help="Directorio raw/ (auto-detectado por defecto)."),
-    dry_run: bool = typer.Option(False, "--dry-run", help="Solo reportar, no mover ni modificar nada."),
-) -> None:
-    """Mueve imágenes de extracción al subdirectorio <stem>/ y actualiza refs en los .md.
-
-    Resuelve colisiones de nombres entre PDFs distintos extraídos al mismo directorio.
-    Las imágenes de cada documento quedan en raw/<stem>/ junto a sus chunks.
-    Los .md monolíticos se actualizan para prefijar las refs con <stem>/.
-    """
-    raw_dir = find_raw_dir(raw)
-    if not raw_dir.is_dir():
-        console.print(f"[red]No existe el directorio raw/: {raw_dir}[/red]")
-        raise typer.Exit(1)
-
-    # Recolectar .md directamente en raw/ (no dentro de subdirectorios de chunks).
-    root_mds = sorted(p for p in raw_dir.glob("*.md") if p.is_file())
-
-    n_moved = 0
-    n_already_ok = 0
-    n_missing = 0
-    n_updated_mds = 0
-    collisions: list[str] = []
-
-    for md_path in root_mds:
-        text = md_path.read_text(encoding="utf-8")
-        bare_refs = _BARE_IMG_REF_RE.findall(text)  # [(pfx, imgname, sfx), ...]
-        if not bare_refs:
-            continue
-
-        img_names = {ref[1] for ref in bare_refs}  # set de nombres únicos
-        stem = md_path.stem
-        target_dir = raw_dir / stem
-
-        # Separar las que existen en root (pendientes de mover) de las que faltan.
-        present = [n for n in img_names if (raw_dir / n).exists()]
-        missing = [n for n in img_names if not (raw_dir / n).exists()
-                   and not (target_dir / n).exists()]
-        already_in_subdir = [n for n in img_names if (target_dir / n).exists()]
-
-        if not present and not missing:
-            n_already_ok += 1
-            continue
-
-        if dry_run:
-            console.print(f"[cyan]{md_path.name}[/cyan] → {stem}/  "
-                          f"({len(present)} a mover, {len(already_in_subdir)} ya ok, "
-                          f"[red]{len(missing)} missing[/red])")
-            for m in missing:
-                console.print(f"  [red]missing:[/red] {m}")
-            n_missing += len(missing)
-            continue
-
-        # Mover imágenes presentes en root → target_dir.
-        if present:
-            target_dir.mkdir(exist_ok=True)
-        for img_name in present:
-            src = raw_dir / img_name
-            dst = target_dir / img_name
-            if dst.exists():
-                # Otro .md ya copió este nombre al mismo subdir — colisión real.
-                collisions.append(f"{md_path.name}: {img_name} (sobrescrito en {stem}/)")
-            shutil.copy2(src, dst)
-            n_moved += 1
-
-        # Actualizar las refs en el .md monolítico: bare → stem/bare.
-        new_text = _prefix_image_refs(text, stem)
-        if new_text != text:
-            md_path.write_text(new_text, encoding="utf-8")
-            n_updated_mds += 1
-
-        n_missing += len(missing)
-        if missing:
-            console.print(f"[yellow]{md_path.name}:[/yellow] {len(missing)} imágenes ya perdidas por colisión: "
-                          + ", ".join(missing[:5]) + ("…" if len(missing) > 5 else ""))
-
-    # Limpiar root: borrar _page_* que ya no aparezcan en ningún .md de root.
-    if not dry_run:
-        still_referenced: set[str] = set()
-        for md_path in root_mds:
-            for _, img_name, _ in _BARE_IMG_REF_RE.findall(md_path.read_text(encoding="utf-8")):
-                still_referenced.add(img_name)
-
-        deleted = 0
-        for img_file in raw_dir.glob("_page_*"):
-            if img_file.is_file() and img_file.name not in still_referenced:
-                img_file.unlink()
-                deleted += 1
-        if deleted:
-            console.print(f"[dim]Eliminadas {deleted} imágenes huérfanas del root.[/dim]")
-
-    # Resumen.
-    if dry_run:
-        console.print(f"\n[dim]--dry-run: nada modificado.[/dim] "
-                      f"{n_missing} imágenes faltantes (perdidas por colisión previa).")
-    else:
-        console.print(f"\n[green]✓[/green] {n_moved} imágenes movidas · "
-                      f"{n_updated_mds} .md actualizados · "
-                      f"[red]{n_missing} missing[/red] (ya perdidas por colisión)")
-        if collisions:
-            console.print(f"[yellow]Colisiones ({len(collisions)}):[/yellow]")
-            for c in collisions[:10]:
-                console.print(f"  {c}")
 
 
 @app.command()
@@ -853,135 +741,6 @@ def session_check(
     # markup=False: el mensaje lleva [[slug]] y va al hook / a Claude tal cual.
     console.print(reason, markup=False)
     raise typer.Exit(2)
-
-
-# ── queue (ingest persistente) ──────────────────────────────────────────────────
-queue_app = typer.Typer(help="Cola de ingest persistente (.atlas/ingest-queue.json).")
-app.add_typer(queue_app, name="queue")
-
-
-def _queue_root(wiki: Optional[Path]) -> Path:
-    return _require_wiki(wiki).parent
-
-
-@queue_app.command("list")
-def queue_list(
-    wiki: Optional[Path] = typer.Option(None, "--wiki"),
-    as_json: bool = typer.Option(False, "--json"),
-) -> None:
-    """Muestra el estado de la cola de ingest."""
-    import json as _json
-    from .wiki.queue import load_queue
-
-    queue = load_queue(_queue_root(wiki))
-    if as_json:
-        console.print_json(_json.dumps(queue.as_dict()))
-        return
-    if not queue.items:
-        console.print("[dim]Cola vacía.[/dim]")
-        return
-    table = Table(title="ingest-queue")
-    table.add_column("estado")
-    table.add_column("PDF")
-    table.add_column("progreso", justify="right")
-    table.add_column("source")
-    table.add_column("actualizado")
-    color = {"pending": "dim", "in-progress": "yellow", "done": "green", "failed": "red"}
-    for item in queue.items:
-        table.add_row(
-            f"[{color.get(item.status, 'white')}]{item.status}[/]",
-            item.pdf_key,
-            item.progress,
-            item.source_slug or "—",
-            item.updated_at or "—",
-        )
-    console.print(table)
-
-
-@queue_app.command("add")
-def queue_add(
-    pdf_key: str = typer.Argument(..., help="Ruta relativa a raw/, ej. 'DDSE.pdf'."),
-    chunks_total: int = typer.Option(0, "--chunks", help="Número total de chunks (0 si no aplica)."),
-    wiki: Optional[Path] = typer.Option(None, "--wiki"),
-) -> None:
-    """Agrega un PDF a la cola (pending). Idempotente."""
-    from .wiki.queue import add_item
-
-    item = add_item(_queue_root(wiki), pdf_key, chunks_total)
-    console.print(f"[cyan]queue:[/cyan] '{item.pdf_key}' → {item.status}")
-
-
-@queue_app.command("start")
-def queue_start(
-    pdf_key: str = typer.Argument(..., help="PDF a marcar como in-progress."),
-    wiki: Optional[Path] = typer.Option(None, "--wiki"),
-) -> None:
-    """Marca un item como in-progress (ingest arrancado)."""
-    from .wiki.queue import start_item
-
-    item = start_item(_queue_root(wiki), pdf_key)
-    if item is None:
-        console.print(f"[red]No encontré '{pdf_key}' en la cola.[/red]")
-        raise typer.Exit(1)
-    console.print(f"[yellow]in-progress:[/yellow] {item.pdf_key}")
-
-
-@queue_app.command("update")
-def queue_update(
-    pdf_key: str = typer.Argument(..., help="PDF en proceso."),
-    chunk: str = typer.Option(..., "--chunk", help="Nombre del chunk procesado, ej. '02-svd.md'."),
-    slug: Optional[str] = typer.Option(None, "--slug", help="Slug de la source wiki (si ya se creó)."),
-    wiki: Optional[Path] = typer.Option(None, "--wiki"),
-) -> None:
-    """Registra un chunk como procesado."""
-    from .wiki.queue import update_item
-
-    item = update_item(_queue_root(wiki), pdf_key, chunk, slug)
-    if item is None:
-        console.print(f"[red]No encontré '{pdf_key}' en la cola.[/red]")
-        raise typer.Exit(1)
-    console.print(f"[green]✓[/green] chunk '{chunk}' registrado · progreso {item.progress}")
-
-
-@queue_app.command("done")
-def queue_done(
-    pdf_key: str = typer.Argument(..., help="PDF a cerrar."),
-    wiki: Optional[Path] = typer.Option(None, "--wiki"),
-) -> None:
-    """Marca un item como done (ingest completo)."""
-    from .wiki.queue import done_item
-
-    item = done_item(_queue_root(wiki), pdf_key)
-    if item is None:
-        console.print(f"[red]No encontré '{pdf_key}' en la cola.[/red]")
-        raise typer.Exit(1)
-    console.print(f"[green]done:[/green] {item.pdf_key}")
-
-
-@queue_app.command("fail")
-def queue_fail(
-    pdf_key: str = typer.Argument(..., help="PDF a marcar como fallido."),
-    wiki: Optional[Path] = typer.Option(None, "--wiki"),
-) -> None:
-    """Marca un item como failed (sesión abortada, retomable)."""
-    from .wiki.queue import fail_item
-
-    item = fail_item(_queue_root(wiki), pdf_key)
-    if item is None:
-        console.print(f"[red]No encontré '{pdf_key}' en la cola.[/red]")
-        raise typer.Exit(1)
-    console.print(f"[red]failed:[/red] {item.pdf_key}")
-
-
-@queue_app.command("clear")
-def queue_clear(
-    wiki: Optional[Path] = typer.Option(None, "--wiki"),
-) -> None:
-    """Elimina items done y failed de la cola."""
-    from .wiki.queue import clear_done
-
-    n = clear_done(_queue_root(wiki))
-    console.print(f"[green]✓[/green] {n} item(s) eliminado(s).")
 
 
 if __name__ == "__main__":

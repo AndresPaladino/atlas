@@ -166,29 +166,7 @@ Aristas son del DAG conceptual, no de la fuente. La fuente solo aporta la oportu
 
 ---
 
-## Paso 7 — Registrar progreso en la cola
-
-Si la fuente tiene chunks (docs grandes), registrar el avance en la cola de ingest:
-
-```bash
-# Al iniciar Fase 2 (primera vez):
-atlas queue add "DDSE.pdf" --chunks 178
-atlas queue start "DDSE.pdf"
-
-# Después de procesar cada chunk:
-atlas queue update "DDSE.pdf" --chunk "02-svd.md" --slug "ddse-brunton"
-
-# Al terminar todos los chunks:
-atlas queue done "DDSE.pdf"
-```
-
-Esto permite retomar sesiones cortadas: la próxima vez que corra `/ingest --compile`,
-`atlas queue list` mostrará el PDF como `in-progress` con los chunks ya procesados,
-y se retoma desde el primero que falte en lugar de empezar de cero.
-
-Para fuentes sin chunks (exámenes, papers cortos), omitir estos comandos.
-
-## Paso 8 — Sellar el hash de ingestión
+## Paso 7 — Sellar el hash de ingestión
 
 Por cada fuente ingerida, correr `atlas ingest-stamp <slug>`: registra en su
 frontmatter el hash del raw (`ingested_sha256`) y la lista `chunks:` cuando el PDF
@@ -203,7 +181,7 @@ ya declarados).
 
 ---
 
-## Paso 9 — Regenerar índice y áreas
+## Paso 8 — Regenerar índice y áreas
 
 Correr `atlas index`. Regenera `wiki/index.md` y los MOCs de `wiki/areas/*.md`
 desde el filesystem (entre marcadores `<!-- atlas:auto -->`, preservando las
@@ -214,7 +192,7 @@ cumple el contrato (`schema/wiki-conventions.md`).
 
 ---
 
-## Paso 10 — Commit y entrada en log
+## Paso 9 — Commit y entrada en log
 
 El log de mutaciones se deriva de git: la mutación real *es* el commit. Dejar (o sugerir) un commit con la convención:
 
@@ -302,9 +280,9 @@ Para cada archivo seleccionado, ejecutar el flujo normal de ingest completo (Fas
 
 > "✓ `nombre-archivo.pdf` → fuente `[[slug]]`, N páginas creadas, M actualizadas."
 
-En compile, **omitir el Paso 8 (stamp) por fuente**: al terminar la secuencia, correr `atlas ingest-stamp --all` una sola vez. Sella todo lo ingerido (hash + `chunks:`) en un paso.
+En compile, **omitir el Paso 7 (stamp) por fuente**: al terminar la secuencia, correr `atlas ingest-stamp --all` una sola vez. Sella todo lo ingerido (hash + `chunks:`) en un paso.
 
-Al iniciar compile, consultar `atlas queue list` primero: si hay items `in-progress`, retomar desde el primer chunk no procesado en lugar de arrancar desde cero.
+Al iniciar compile, consultar `atlas ingest-status` primero: las fuentes en estado `partial X/N` se retoman desde los chunks pendientes (los que faltan en `chunks:`) en lugar de arrancar desde cero.
 
 ### Paso C4 — Resumen final
 
