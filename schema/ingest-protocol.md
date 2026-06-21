@@ -162,9 +162,15 @@ Aristas son del DAG conceptual, no de la fuente. La fuente solo aporta la oportu
 ## Paso 7 — Sellar el hash de ingestión
 
 Por cada fuente ingerida, correr `atlas ingest-stamp <slug>`: registra en su
-frontmatter (`ingested_sha256`) el hash del raw que se ingirió. Es lo que permite
-a `--compile` saltear después las fuentes sin cambios (cero re-ingesta redundante).
-Determinístico — el LLM no calcula el hash, solo invoca el comando.
+frontmatter el hash del raw (`ingested_sha256`) y la lista `chunks:` cuando el PDF
+tiene carpeta de chunks. Es lo que permite a `--compile` saltear después las
+fuentes sin cambios (cero re-ingesta redundante) y lo que cierra el coverage de
+`ingest-status` (sin `chunks:` reporta `partial 0/N`). Determinístico — el LLM no
+calcula el hash, solo invoca el comando.
+
+En `--compile`, en vez de una llamada por fuente, correr `atlas ingest-stamp --all`
+una sola vez al final: sella toda fuente ingestable (idempotente, no pisa `chunks:`
+ya declarados).
 
 ---
 
@@ -255,6 +261,8 @@ Esperar respuesta. El usuario puede:
 Para cada archivo seleccionado, ejecutar el flujo normal de ingest completo (Fase 1 análisis → Fase 2 generación) antes de pasar al siguiente. Al terminar cada uno, informar brevemente:
 
 > "✓ `nombre-archivo.pdf` → fuente `[[slug]]`, N páginas creadas, M actualizadas."
+
+En compile, **omitir el Paso 7 (stamp) por fuente**: al terminar la secuencia, correr `atlas ingest-stamp --all` una sola vez. Sella todo lo ingerido (hash + `chunks:`) en un paso.
 
 ### Paso C4 — Resumen final
 

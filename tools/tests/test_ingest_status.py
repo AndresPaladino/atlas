@@ -204,6 +204,44 @@ def test_ingested_pdf_all_chunks_covered(wiki):
     assert s.uncovered_chunks_count == 0
 
 
+def test_stamp_fills_chunks_for_legacy_source(wiki):
+    """Source vieja con path: pero sin chunks: → stamp la rellena y pasa a ingested."""
+    raw_dir = _make_raw_dir(wiki.parent)
+    chunks = ["01-intro.md", "02-svd.md", "03-pca.md"]
+    _register_pdf(raw_dir, "libro.pdf", chunks=chunks)
+    write_page(wiki, "sources", "libro",
+               "type: source\ntitle: Libro\nsource_kind: book\n"
+               "path: raw/libro.pdf\n"
+               "areas: [math]\ncreated: 2026-01-01\nupdated: 2026-01-01")
+    # antes de sellar: partial 0/3
+    pre = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent)[0]
+    assert pre.status == "partial" and len(pre.covered_chunks) == 0
+
+    digest = stamp_source(wiki.parent, _source_page(wiki, "libro"))
+    assert digest
+    text = (wiki / "sources" / "libro.md").read_text(encoding="utf-8")
+    assert text.count("chunks:") == 1
+    assert "raw/libro/03-pca.md" in text
+
+    post = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent)[0]
+    assert post.status == "ingested" and post.uncovered_chunks_count == 0
+
+
+def test_stamp_does_not_overwrite_existing_chunks(wiki):
+    """Si la source ya declara chunks:, stamp no los pisa."""
+    raw_dir = _make_raw_dir(wiki.parent)
+    _register_pdf(raw_dir, "libro.pdf", chunks=["01-intro.md", "02-svd.md"])
+    write_page(wiki, "sources", "libro",
+               "type: source\ntitle: Libro\nsource_kind: book\n"
+               "path: raw/libro.pdf\n"
+               "chunks: [raw/libro/01-intro.md]\n"
+               "areas: [math]\ncreated: 2026-01-01\nupdated: 2026-01-01")
+    stamp_source(wiki.parent, _source_page(wiki, "libro"))
+    text = (wiki / "sources" / "libro.md").read_text(encoding="utf-8")
+    assert text.count("chunks:") == 1
+    assert "02-svd.md" not in text  # no se agregó el faltante
+
+
 def test_legacy_extracted_field_counts_as_chunk_coverage(wiki):
     """Sources viejas con extracted: apuntando a un chunk individual se reconocen."""
     raw_dir = _make_raw_dir(wiki.parent)
@@ -218,6 +256,20 @@ def test_legacy_extracted_field_counts_as_chunk_coverage(wiki):
     s = statuses[0]
     assert s.status == "partial"
     assert "01-intro.md" in s.covered_chunks
+
+
+def test_assessment_covers_pdf(wiki):
+    """Un examen migrado a wiki/assessments/ (no sources/) igual cubre su PDF."""
+    raw_dir = _make_raw_dir(wiki.parent)
+    _register_pdf(raw_dir, "examen.pdf")
+    write_page(wiki, "assessments", "examen-dic2024",
+               "type: assessment\ntitle: Examen Dic 2024\nassessment_kind: exam\n"
+               "course: cvec\npath: raw/examen.pdf\n"
+               "areas: [math]\ncreated: 2026-01-01\nupdated: 2026-01-01")
+    statuses = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent)
+    s = statuses[0]
+    assert s.status == "ingested"
+    assert "examen-dic2024" in s.sources
 
 
 def test_ordering_pending_first(wiki):

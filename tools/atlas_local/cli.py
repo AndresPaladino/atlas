@@ -681,23 +681,44 @@ def ingest_status_cmd(
 
 @app.command(name="ingest-stamp")
 def ingest_stamp_cmd(
-    source: str = typer.Argument(..., help="Slug de la fuente recién ingerida."),
+    source: Optional[str] = typer.Argument(None, help="Slug de la fuente recién ingerida (omitir con --all)."),
+    all_sources: bool = typer.Option(False, "--all", help="Sella todas las fuentes ingestables de una."),
     wiki: Optional[Path] = typer.Option(None, "--wiki", help="Directorio wiki/ (auto-detectado)."),
 ) -> None:
-    """Sella el hash del raw ingerido en el frontmatter de la fuente (idempotente)."""
-    from .wiki.ingest import stamp_source
+    """Sella hash + lista de chunks en el frontmatter de la fuente (idempotente).
+
+    Con un slug sella esa fuente; con --all sella cada source/assessment ingestable.
+    """
+    from .wiki.ingest import _INGESTABLE_FOLDERS, stamp_source
     from .wiki.loader import load_wiki
 
     wiki_dir = _require_wiki(wiki)
-    page = next((p for p in load_wiki(wiki_dir) if p.folder == "sources" and p.slug == source), None)
-    if page is None:
-        console.print(f"[red]No existe wiki/sources/{source}.md[/red]")
+    pages = load_wiki(wiki_dir)
+
+    if all_sources:
+        targets = [p for p in pages if p.folder in _INGESTABLE_FOLDERS]
+    elif source:
+        targets = [p for p in pages if p.folder in _INGESTABLE_FOLDERS and p.slug == source]
+        if not targets:
+            console.print(f"[red]No existe fuente ingestable con slug '{source}'[/red]")
+            raise typer.Exit(1)
+    else:
+        console.print("[red]Pasá un slug o usá --all.[/red]")
         raise typer.Exit(1)
-    digest = stamp_source(wiki_dir.parent, page)
-    if digest is None:
-        console.print(f"[yellow]No encontré el archivo raw de '{source}' (path/extracted). Sin sellar.[/yellow]")
-        raise typer.Exit(1)
-    console.print(f"[green]✓[/green] {source} sellada · ingested_sha256={digest[:12]}…")
+
+    stamped = skipped = 0
+    for page in targets:
+        digest = stamp_source(wiki_dir.parent, page)
+        if digest is None:
+            skipped += 1
+            if not all_sources:
+                console.print(f"[yellow]No encontré el archivo raw de '{page.slug}' (path/extracted). Sin sellar.[/yellow]")
+                raise typer.Exit(1)
+            continue
+        stamped += 1
+        console.print(f"[green]✓[/green] {page.slug} sellada · ingested_sha256={digest[:12]}…")
+    if all_sources:
+        console.print(f"[bold]{stamped} sellada(s), {skipped} sin raw.[/bold]")
 
 
 # ── log ──────────────────────────────────────────────────────────────────────
