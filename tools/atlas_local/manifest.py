@@ -3,6 +3,9 @@
 Llaveado por la ruta del PDF relativa a ``raw/`` (así el manifest es portable:
 el desktop convierte, commitea, y el Mac hace pull y ve qué ya está hecho).
 Una entrada queda ``stale`` si el sha256 del PDF cambió respecto a lo registrado.
+
+Los artefactos de extracción (.md, .toc.md, carpetas de chunks) viven en
+``extracted/`` (artifacts_dir). Las rutas del Entry son relativas a ese dir.
 """
 
 from __future__ import annotations
@@ -31,11 +34,11 @@ class Entry:
     extractor_version: str
     device: str
     extracted_at: str
-    md_path: str          # relativo a raw/
+    md_path: str          # relativo a extracted/
     n_pages: int = 0
     n_figs: int = 0
-    toc_path: str | None = None     # relativo a raw/, si se segmentó
-    chunks_dir: str | None = None   # relativo a raw/, si se segmentó
+    toc_path: str | None = None     # relativo a extracted/, si se segmentó
+    chunks_dir: str | None = None   # relativo a extracted/, si se segmentó
     n_chunks: int = 0
 
 
@@ -52,21 +55,22 @@ def now_iso() -> str:
 
 
 class Manifest:
-    def __init__(self, raw_dir: Path, entries: dict[str, Entry]):
+    def __init__(self, raw_dir: Path, entries: dict[str, Entry], artifacts_dir: Path | None = None):
         self.raw_dir = raw_dir
+        self.artifacts_dir = artifacts_dir if artifacts_dir is not None else raw_dir
         self.path = raw_dir / MANIFEST_NAME
         self._entries = entries
 
     # ── carga / guardado ─────────────────────────────────────────────────────
     @classmethod
-    def load(cls, raw_dir: Path) -> "Manifest":
+    def load(cls, raw_dir: Path, artifacts_dir: Path | None = None) -> "Manifest":
         path = raw_dir / MANIFEST_NAME
         entries: dict[str, Entry] = {}
         if path.exists():
             data = json.loads(path.read_text(encoding="utf-8"))
             for key, val in data.get("entries", {}).items():
                 entries[key] = Entry(**val)
-        return cls(raw_dir, entries)
+        return cls(raw_dir, entries, artifacts_dir)
 
     def save(self) -> None:
         payload = {
@@ -85,7 +89,7 @@ class Manifest:
         entry = self._entries.get(self._key(pdf))
         if entry is None:
             return Status.PENDING
-        md = self.raw_dir / entry.md_path
+        md = self.artifacts_dir / entry.md_path
         if not md.exists():
             return Status.PENDING
         if entry.sha256 != sha256_file(pdf):
@@ -106,11 +110,11 @@ class Manifest:
             extractor_version=extractor_version,
             device=device,
             extracted_at=now_iso(),
-            md_path=md_path.relative_to(self.raw_dir).as_posix(),
+            md_path=md_path.relative_to(self.artifacts_dir).as_posix(),
             n_pages=n_pages,
             n_figs=n_figs,
-            toc_path=toc_path.relative_to(self.raw_dir).as_posix() if toc_path else None,
-            chunks_dir=chunks_dir.relative_to(self.raw_dir).as_posix() if chunks_dir else None,
+            toc_path=toc_path.relative_to(self.artifacts_dir).as_posix() if toc_path else None,
+            chunks_dir=chunks_dir.relative_to(self.artifacts_dir).as_posix() if chunks_dir else None,
             n_chunks=n_chunks,
         )
         self._entries[self._key(pdf)] = entry

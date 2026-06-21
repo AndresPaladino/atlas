@@ -20,23 +20,30 @@ def _make_raw_dir(repo_root: Path) -> Path:
     return raw
 
 
+def _make_artifacts_dir(repo_root: Path) -> Path:
+    art = repo_root / "extracted"
+    art.mkdir(exist_ok=True)
+    return art
+
+
 def _register_pdf(raw_dir: Path, pdf_name: str, chunks: list[str] | None = None) -> Path:
-    """Crea un PDF ficticio y lo registra en el Manifest."""
+    """Crea un PDF ficticio y lo registra en el Manifest. Artefactos en extracted/."""
+    art_dir = _make_artifacts_dir(raw_dir.parent)
     pdf = raw_dir / pdf_name
     pdf.write_bytes(b"%PDF fake")
-    manifest = Manifest.load(raw_dir)
+    manifest = Manifest.load(raw_dir, art_dir)
 
     chunks_dir = None
     n_chunks = 0
     if chunks is not None:
-        folder = raw_dir / pdf_name.replace(".pdf", "")
+        folder = art_dir / pdf_name.replace(".pdf", "")
         folder.mkdir(exist_ok=True)
         for c in chunks:
             (folder / c).write_text(f"# {c}", encoding="utf-8")
         chunks_dir = folder
         n_chunks = len(chunks)
 
-    md = raw_dir / pdf_name.replace(".pdf", ".md")
+    md = art_dir / pdf_name.replace(".pdf", ".md")
     md.write_text("# mono", encoding="utf-8")
 
     manifest.record(
@@ -146,7 +153,7 @@ def test_stamp_is_idempotent(wiki):
 def test_pending_pdf_no_sources(wiki):
     raw_dir = _make_raw_dir(wiki.parent)
     _register_pdf(raw_dir, "libro.pdf")
-    statuses = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent)
+    statuses = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent, wiki.parent / "extracted")
     assert len(statuses) == 1
     s = statuses[0]
     assert s.pdf_key == "libro.pdf"
@@ -161,7 +168,7 @@ def test_ingested_pdf_simple(wiki):
                "type: source\ntitle: Libro Ch1\nsource_kind: book\n"
                "path: raw/libro.pdf\n"
                "areas: [math]\ncreated: 2026-01-01\nupdated: 2026-01-01")
-    statuses = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent)
+    statuses = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent, wiki.parent / "extracted")
     assert statuses[0].status == "ingested"
     assert "libro-ch1" in statuses[0].sources
 
@@ -174,9 +181,9 @@ def test_partial_pdf_with_chunks(wiki):
     write_page(wiki, "sources", "libro-intro",
                "type: source\ntitle: Libro Intro\nsource_kind: book\n"
                "path: raw/libro.pdf\n"
-               "chunks: [raw/libro/01-intro.md]\n"
+               "chunks: [extracted/libro/01-intro.md]\n"
                "areas: [math]\ncreated: 2026-01-01\nupdated: 2026-01-01")
-    statuses = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent)
+    statuses = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent, wiki.parent / "extracted")
     s = statuses[0]
     assert s.status == "partial"
     assert s.n_chunks == 3
@@ -191,14 +198,14 @@ def test_ingested_pdf_all_chunks_covered(wiki):
     write_page(wiki, "sources", "libro-intro",
                "type: source\ntitle: Intro\nsource_kind: book\n"
                "path: raw/libro.pdf\n"
-               "chunks: [raw/libro/01-intro.md]\n"
+               "chunks: [extracted/libro/01-intro.md]\n"
                "areas: [math]\ncreated: 2026-01-01\nupdated: 2026-01-01")
     write_page(wiki, "sources", "libro-svd",
                "type: source\ntitle: SVD\nsource_kind: book\n"
                "path: raw/libro.pdf\n"
-               "chunks: [raw/libro/02-svd.md]\n"
+               "chunks: [extracted/libro/02-svd.md]\n"
                "areas: [math]\ncreated: 2026-01-01\nupdated: 2026-01-01")
-    statuses = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent)
+    statuses = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent, wiki.parent / "extracted")
     s = statuses[0]
     assert s.status == "ingested"
     assert s.uncovered_chunks_count == 0
@@ -214,16 +221,16 @@ def test_stamp_fills_chunks_for_legacy_source(wiki):
                "path: raw/libro.pdf\n"
                "areas: [math]\ncreated: 2026-01-01\nupdated: 2026-01-01")
     # antes de sellar: partial 0/3
-    pre = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent)[0]
+    pre = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent, wiki.parent / "extracted")[0]
     assert pre.status == "partial" and len(pre.covered_chunks) == 0
 
     digest = stamp_source(wiki.parent, _source_page(wiki, "libro"))
     assert digest
     text = (wiki / "sources" / "libro.md").read_text(encoding="utf-8")
     assert text.count("chunks:") == 1
-    assert "raw/libro/03-pca.md" in text
+    assert "extracted/libro/03-pca.md" in text
 
-    post = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent)[0]
+    post = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent, wiki.parent / "extracted")[0]
     assert post.status == "ingested" and post.uncovered_chunks_count == 0
 
 
@@ -234,7 +241,7 @@ def test_stamp_does_not_overwrite_existing_chunks(wiki):
     write_page(wiki, "sources", "libro",
                "type: source\ntitle: Libro\nsource_kind: book\n"
                "path: raw/libro.pdf\n"
-               "chunks: [raw/libro/01-intro.md]\n"
+               "chunks: [extracted/libro/01-intro.md]\n"
                "areas: [math]\ncreated: 2026-01-01\nupdated: 2026-01-01")
     stamp_source(wiki.parent, _source_page(wiki, "libro"))
     text = (wiki / "sources" / "libro.md").read_text(encoding="utf-8")
@@ -250,9 +257,9 @@ def test_legacy_extracted_field_counts_as_chunk_coverage(wiki):
     write_page(wiki, "sources", "libro-intro",
                "type: source\ntitle: Intro\nsource_kind: book\n"
                "path: raw/libro.pdf\n"
-               "extracted: raw/libro/01-intro.md\n"
+               "extracted: extracted/libro/01-intro.md\n"
                "areas: [math]\ncreated: 2026-01-01\nupdated: 2026-01-01")
-    statuses = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent)
+    statuses = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent, wiki.parent / "extracted")
     s = statuses[0]
     assert s.status == "partial"
     assert "01-intro.md" in s.covered_chunks
@@ -266,7 +273,7 @@ def test_assessment_covers_pdf(wiki):
                "type: assessment\ntitle: Examen Dic 2024\nassessment_kind: exam\n"
                "course: cvec\npath: raw/examen.pdf\n"
                "areas: [math]\ncreated: 2026-01-01\nupdated: 2026-01-01")
-    statuses = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent)
+    statuses = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent, wiki.parent / "extracted")
     s = statuses[0]
     assert s.status == "ingested"
     assert "examen-dic2024" in s.sources
@@ -280,6 +287,6 @@ def test_ordering_pending_first(wiki):
                "type: source\ntitle: BBB\nsource_kind: book\n"
                "path: raw/bbb.pdf\n"
                "areas: [math]\ncreated: 2026-01-01\nupdated: 2026-01-01")
-    statuses = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent)
+    statuses = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent, wiki.parent / "extracted")
     assert statuses[0].pdf_key == "aaa.pdf"
     assert statuses[0].status == "pending"

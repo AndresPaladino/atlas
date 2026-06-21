@@ -23,8 +23,8 @@ Si hay archivos modificados o sin trackear (excluí `wiki/.obsidian/workspace.js
 
 **Regla de agrupación:**
 - Un commit puede mezclar `tools/` + `schema/` + `.claude/` (todo funcionalidad)
-- Un commit puede mezclar `wiki/` + `raw/` (todo contenido personal)
-- **Nunca** un mismo commit mezcla funcionalidad con `raw/`/`wiki/`
+- Un commit puede mezclar `wiki/` + `raw/` + `extracted/` (todo contenido personal)
+- **Nunca** un mismo commit mezcla funcionalidad con `raw/`/`extracted/`/`wiki/`
 - `wiki/.obsidian/` (config del vault: graph.json, tema) va con el grupo de contenido; `workspace.json` está gitignored (ruido de UI)
 
 **Para cada grupo**, generá un mensaje de commit descriptivo en español con el formato:
@@ -60,7 +60,7 @@ Si falla (divergencia), avisá y detenete. No sigas al Paso 2.
 
 ## Paso 2 — detectar commits candidatos para upstream
 
-Un commit es candidato para upstream si y solo si **ninguno** de sus archivos modificados está bajo `raw/` o `wiki/`. Los commits que mezclan zonas **no son candidatos** (avisalo si pasa).
+Un commit es candidato para upstream si y solo si **ninguno** de sus archivos modificados está bajo `raw/`, `extracted/` o `wiki/`. Los commits que mezclan zonas **no son candidatos** (avisalo si pasa).
 
 ```bash
 git fetch upstream
@@ -75,7 +75,7 @@ git diff-tree --no-commit-id -r --name-only <hash>
 
 Separalos en:
 - **candidatos**: solo tocan `tools/`, `schema/`, `.claude/`, u otros archivos de funcionalidad
-- **solo-personales**: tocan `raw/` o `wiki/` (van únicamente a origin, ya pusheados)
+- **solo-personales**: tocan `raw/`, `extracted/` o `wiki/` (van únicamente a origin, ya pusheados)
 - **mixtos**: mezclan zonas (reportá cuáles son y sugerí que el usuario los separe en el futuro)
 
 Si no hay candidatos, avisá "No hay commits de funcionalidad nuevos para upstream" y terminá.
@@ -118,7 +118,7 @@ git checkout main -- <archivo1> <archivo2> ...
 git status
 ```
 
-Si aparece cualquier archivo bajo `raw/` o `wiki/`, **detenete** y avisá antes de continuar.
+Si aparece cualquier archivo bajo `raw/`, `extracted/` o `wiki/`, **detenete** y avisá antes de continuar.
 
 7. Commiteá y pusheá:
 

@@ -45,7 +45,7 @@ Conceptualmente, durante una sesión sobre tema **T** el agente **no debe leer**
 - `wiki/theorems/<*>.md` con **T** en `aliases:` o `tags:`.
 - `wiki/methods/<*>.md` con **T** en `aliases:` o `tags:`.
 - `wiki/examples/<*>.md` con **T** en `aliases:` o `tags:` o cuyo `illustrates:` apunte a una página taggeada con **T**.
-- Cualquier archivo bajo `raw/`.
+- Cualquier archivo bajo `raw/` o `extracted/`.
 
 Operaciones **permitidas** durante `/practice`:
 

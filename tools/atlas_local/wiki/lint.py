@@ -8,7 +8,6 @@ limita a discutir y aplicar los fixes — el juicio, no la detección.
 
 from __future__ import annotations
 
-import subprocess
 from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -65,19 +64,6 @@ def _inbound_targets(pages: list[Page]) -> Counter:
             for tgt in p.edge(key):
                 counter[tgt] += 1
     return counter
-
-
-def _git_last_commit_date(repo_root: Path, rel_path: str) -> str | None:
-    """Fecha (YYYY-MM-DD) del último commit que tocó el archivo, o None."""
-    try:
-        r = subprocess.run(
-            ["git", "log", "-1", "--format=%cs", "--", rel_path],
-            cwd=repo_root, capture_output=True, text=True,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return None
-    out = r.stdout.strip()
-    return out or None
 
 
 def lint(wiki_dir: Path, scope: str | None = None,
@@ -168,16 +154,6 @@ def lint(wiki_dir: Path, scope: str | None = None,
             findings.append(Finding(
                 "concept-implicit", "warning", target,
                 f"mencionado {count} veces como [[{target}]] pero sin página propia",
-            ))
-
-    # ── 10. updated-stale (vs git) ────────────────────────────────────────────
-    for p in pages:
-        updated = str(p.frontmatter.get("updated", "")).strip()
-        git_date = _git_last_commit_date(repo_root, p.rel_path)
-        if updated and git_date and git_date > updated:
-            findings.append(Finding(
-                "updated-stale", "warning", p.rel_path,
-                f"updated={updated} pero el último commit es {git_date}",
             ))
 
     # ── chunks-migration: extracted: apuntando a un chunk → migrar a chunks: ────

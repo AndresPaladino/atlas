@@ -54,3 +54,15 @@ def test_raw_is_blocked_in_practice(wiki):
     set_practice(root, wiki, "Green")
     allowed, reason = check_read(root, pdf)
     assert not allowed and "raw/" in reason
+
+
+def test_extracted_is_blocked_in_practice(wiki):
+    root = wiki.parent
+    extracted = root / "extracted"
+    extracted.mkdir(exist_ok=True)
+    chunk = extracted / "x" / "01-intro.md"
+    chunk.parent.mkdir(exist_ok=True)
+    chunk.write_text("# chunk", encoding="utf-8")
+    set_practice(root, wiki, "Green")
+    allowed, reason = check_read(root, chunk)
+    assert not allowed and "extracted/" in reason

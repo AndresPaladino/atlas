@@ -200,22 +200,23 @@ def status(
 
 
 # ── git push helper ───────────────────────────────────────────────────────────
-def _git_push(raw_dir: Path, extracted_pdfs: list[Path]) -> None:
+def _git_push(raw_dir: Path, extracted_pdfs: list[Path], artifacts_dir: Path) -> None:
     import subprocess
 
     repo_root = raw_dir.parent
-    md_files = [str(p.with_suffix(".md").relative_to(repo_root)) for p in extracted_pdfs]
+    md_files = [str((artifacts_dir / p.relative_to(raw_dir)).with_suffix(".md").relative_to(repo_root)) for p in extracted_pdfs]
     manifest_rel = str((raw_dir / ".atlas-extract.json").relative_to(repo_root))
 
     # Artefactos de segmentación (cuando el doc se segmentó): TOC + dir de chunks.
     seg_files: list[str] = []
     for p in extracted_pdfs:
-        toc = p.with_suffix(".toc.md")
-        chunks_dir = p.with_suffix("")
+        stem = p.relative_to(raw_dir).as_posix().replace(".pdf", "")
+        toc = artifacts_dir / (stem + ".toc.md")
+        chunks_dir_p = artifacts_dir / stem
         if toc.exists():
             seg_files.append(str(toc.relative_to(repo_root)))
-        if chunks_dir.is_dir():
-            seg_files.append(str(chunks_dir.relative_to(repo_root)))
+        if chunks_dir_p.is_dir():
+            seg_files.append(str(chunks_dir_p.relative_to(repo_root)))
 
     def run(cmd: list[str]) -> subprocess.CompletedProcess:
         return subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True)
@@ -257,7 +258,7 @@ def extract(
     segment: Optional[bool] = typer.Option(None, "--segment/--no-segment", help="Forzar/inhibir la segmentación en chunks+TOC (default: auto por umbral de tamaño)."),
     throttle: str = typer.Option(DEFAULT_THROTTLE, "--throttle", help="Perfil de uso de recursos: low|medium|full-throttle (default: medium)."),
 ) -> None:
-    """Convierte PDFs de raw/ a markdown (sibling .md) y actualiza el manifest."""
+    """Convierte PDFs de raw/ a markdown y actualiza el manifest. Artefactos en extracted/."""
     from .extract import Extractor  # import perezoso (arrastra torch/marker)
 
     raw_dir = find_raw_dir(raw)
@@ -265,11 +266,14 @@ def extract(
         console.print(f"[red]No existe el directorio raw/: {raw_dir}[/red]")
         raise typer.Exit(1)
 
+    artifacts_dir = raw_dir.parent / "extracted"
+    artifacts_dir.mkdir(exist_ok=True)
+
     cache_dir = _resolve_cache_dir(raw_dir)  # override con $ATLAS_CACHE
 
     device = detect_device()
     tier = resolve_tier(device)
-    manifest = Manifest.load(raw_dir)
+    manifest = Manifest.load(raw_dir, artifacts_dir)
 
     # Selección de targets.
     if paths:
@@ -324,7 +328,10 @@ def extract(
                 caps = caption_images(result.images, tier.caption_model)
                 result.markdown = inline_captions(result.markdown, caps)
 
-            md_path = pdf.with_suffix(".md")
+            # El .md monolítico y sus artefactos van a extracted/, no a raw/.
+            pdf_rel = pdf.relative_to(raw_dir)
+            md_path = artifacts_dir / pdf_rel.with_suffix(".md")
+            md_path.parent.mkdir(parents=True, exist_ok=True)
             header = (
                 f"<!-- atlas-local: extraído de {rel} con {result.extractor} "
                 f"v{result.extractor_version} en {device.kind}. No editar a mano. -->\n\n"
@@ -333,7 +340,7 @@ def extract(
             # Imágenes al subdirectorio <stem>/ para evitar colisiones entre PDFs.
             # Los chunks viven en ese mismo dir, así sus refs bare resuelven bien.
             # El monolítico vive un nivel arriba y necesita el prefijo.
-            img_dir = pdf.parent / pdf.stem
+            img_dir = artifacts_dir / pdf_rel.parent / pdf.stem
             if result.images:
                 img_dir.mkdir(exist_ok=True)
                 for name, data in result.images.items():
@@ -355,6 +362,7 @@ def extract(
                     result.markdown, md_path=md_path,
                     source_rel=rel, n_pages=result.n_pages,
                     target_tokens=seg_mod.DEFAULT_TARGET_TOKENS,
+                    artifacts_base=md_path.parent,
                 )
 
             manifest.record(
@@ -377,7 +385,7 @@ def extract(
                   f"Manifest: {manifest.path.relative_to(raw_dir.parent)}")
 
     if push and extracted:
-        _git_push(raw_dir, extracted)
+        _git_push(raw_dir, extracted, artifacts_dir)
 
 
 @app.command()
@@ -564,7 +572,8 @@ def ingest_status_cmd(
         console.print(f"[red]No existe el directorio raw/: {raw_dir}[/red]")
         raise typer.Exit(1)
 
-    statuses = raw_ingest_status(pages, raw_dir, wiki_dir.parent)
+    artifacts_dir_is = raw_dir.parent / "extracted"
+    statuses = raw_ingest_status(pages, raw_dir, wiki_dir.parent, artifacts_dir_is)
 
     if as_json:
         console.print_json(_json.dumps({"raw": [s.as_dict() for s in statuses]}))
@@ -585,11 +594,11 @@ def ingest_status_cmd(
         if s.n_chunks:
             chunks_cell = f"{len(s.covered_chunks)}/{s.n_chunks}"
             if s.status == "partial":
-                raw_dir_local = find_raw_dir(raw)
+                chunks_dir_p = artifacts_dir_is / s.pdf_key.replace(".pdf", "")
                 all_chunks = sorted(
-                    p.name for p in (raw_dir_local / s.pdf_key.replace(".pdf", "")).iterdir()
+                    p.name for p in chunks_dir_p.iterdir()
                     if p.is_file() and p.suffix == ".md"
-                ) if (raw_dir_local / s.pdf_key.replace(".pdf", "")).exists() else []
+                ) if chunks_dir_p.exists() else []
                 missing = [c for c in all_chunks if c not in s.covered_chunks]
                 pending_cell = ", ".join(missing) if missing else "—"
             else:
