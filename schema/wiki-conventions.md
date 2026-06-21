@@ -18,7 +18,8 @@ Contrato de forma para todo archivo bajo `wiki/`. Cualquier modo que cree o modi
 | `method` | `wiki/methods/` | Procedimiento operativo. Ej: criterio de la Hessiana, análisis de Kleene. |
 | `example` | `wiki/examples/` | Caso resuelto que ilustra un concepto/teorema/método. Ej: parametrización de la cicloide. |
 | `comparison` | `wiki/comparisons/` | Página que contrasta 2+ entidades. Ej: TFI vs teorema de la función inversa. |
-| `source` | `wiki/sources/` | Resumen estructurado de una fuente externa con mapa de coverage. |
+| `source` | `wiki/sources/` | Resumen estructurado de una **fuente de conocimiento** (libro, paper, notas, clase) con mapa de coverage. |
+| `assessment` | `wiki/assessments/` | **Evaluación** (examen, parcial, práctico). NO es fuente de conocimiento: es un instrumento que evalúa conceptos. No va en `sources:` de las páginas. |
 | `area` | `wiki/areas/` | MOC (map of content) de un área. Listado vía Dataview o manual. |
 
 Regla: cada página tiene **un solo tipo**. La pertenencia a múltiples áreas (`math` + `signals`) se declara en el frontmatter, no replicando el archivo.
@@ -31,7 +32,7 @@ Todo archivo wiki empieza con bloque YAML:
 
 ```yaml
 ---
-type: concept | theorem | method | example | comparison | source | area
+type: concept | theorem | method | example | comparison | source | assessment | area
 title: "Título legible"
 aliases: ["nombre alt", "símbolo", "EN name"]
 areas: [math, signals]
@@ -52,12 +53,14 @@ Campos extra por tipo:
 - **`method`**: `when_to_use: "..."`, `fails_when: "..."` — selección del método.
 - **`example`**: `illustrates: ["[[concept-or-theorem]]"]`, `difficulty: 1|2|3`.
 - **`source`**: `source_kind: lecture|book|paper|notes`, `path: "raw/foo.pdf"`, `pages: "12-34"`, `covers_concepts: [[...]]`, `covers_theorems: [[...]]`, `covers_methods: [[...]]`. Opcional, gestionado por el CLI (no a mano): `ingested_sha256` — hash del raw ya ingerido, lo sella `atlas ingest-stamp` para que `--compile` saltee fuentes sin cambios.
+- **`assessment`**: `assessment_kind: exam|parcial|practica`, `course: "sistop"` (sigla del curso), `path: "raw/.../foo.pdf"`, `evaluates: ["[[concepto]]", ...]` — wikilinks a lo que la evaluación toca (unifica concepts/theorems/methods; el destino ya declara su `type`). Mismo `ingested_sha256` opcional que `source`. **Bidireccional**: cada página en `evaluates:` debe tener este assessment en su `assessed_by:` (ver abajo); el check `assessment-symmetry` de `atlas lint` lo verifica.
 - **`comparison`**: `compares: ["[[A]]", "[[B]]"]`.
 - **`area`**: `tag_prefix: "math"` — prefijo de tag que captura sus miembros.
 
 ### Validez de campos
 
 - `requires` / `unlocks`: arrays de wikilinks `[[slug]]`. Definen el DAG de dependencias.
+- `assessed_by`: array de wikilinks `[[assessments/slug]]` en concept/theorem/method — los exámenes/parciales que evalúan esta página. Es el **lado inverso** de `evaluates:` (espejo exacto). Los exámenes **no** van en `sources:` (ahí solo material de estudio: libros, papers, notas, clases).
 - `aliases`: incluir variantes (símbolo, EN, ES, abreviatura). Sirve para el firewall y para resolver `[[wikilinks]]` ambiguos.
 - `tags`: kebab con `/` para jerarquía. Ej: `calculus/vector/integration`.
 

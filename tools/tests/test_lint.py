@@ -37,6 +37,15 @@ def test_edge_asymmetry_detected(wiki):
     assert any(f.check == "edge-asymmetric" for f in lint(wiki))
 
 
+def test_assessment_symmetry_detected(wiki):
+    # un examen evalúa gradient pero gradient no tiene assessed_by hacia él
+    write_page(wiki, "assessments", "exam-x",
+               "type: assessment\ntitle: E\nassessment_kind: exam\nareas: [math]\n"
+               "path: raw/e.pdf\nevaluates: ['[[gradient]]']\n"
+               "created: 2026-01-01\nupdated: 2026-01-01")
+    assert any(f.check == "assessment-symmetry" for f in lint(wiki))
+
+
 def test_orphan_detected(wiki):
     write_page(wiki, "concepts", "island",
                "type: concept\ntitle: Island\nareas: [math]\ncreated: 2026-01-01\nupdated: 2026-01-01")

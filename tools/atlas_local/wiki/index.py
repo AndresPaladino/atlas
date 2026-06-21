@@ -31,6 +31,7 @@ _TYPE_SECTIONS = [
     ("example", "Ejemplos", "examples"),
     ("comparison", "Comparaciones", "comparisons"),
     ("source", "Fuentes", "sources"),
+    ("assessment", "Evaluaciones", "assessments"),
 ]
 
 # Áreas con MOC: única fuente de verdad en schema.py (evita drift).

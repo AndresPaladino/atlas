@@ -24,6 +24,7 @@ PAGE_DIRS = (
     "examples",
     "comparisons",
     "sources",
+    "assessments",
     "areas",
 )
 
@@ -166,7 +167,12 @@ def load_wiki(wiki_dir: Path, scope: str | None = None) -> list[Page]:
         if not d.is_dir():
             continue
         for md in sorted(d.glob("*.md")):
-            pages.append(load_page(md, repo_root))
+            try:
+                pages.append(load_page(md, repo_root))
+            except FileNotFoundError:
+                # ponytail: archivo que desapareció entre glob y read
+                # (autosave de Obsidian, temp a medio escribir). Saltear.
+                continue
     return pages
 
 

@@ -44,6 +44,9 @@ class ForgetPlan:
         }
 
 
+# ponytail: forget cubre sources (arista `sources:`), no assessments (arista
+# `assessed_by:`). Olvidar un examen no fue pedido; agregar una rama análoga
+# cuando haga falta — el patrón es idéntico cambiando folder/arista.
 def plan_forget(pages: list[Page], source_slug: str) -> ForgetPlan:
     """Computa el plan de olvido de ``source_slug`` sobre las páginas dadas."""
     slug = normalize_slug(source_slug)

@@ -35,7 +35,7 @@ Si no hay candidatas:
 
 - Leer 3 a 8 páginas relevantes. No más — la síntesis se diluye.
 - Si una página apunta a otras vía `requires:` o `unlocks:`, evaluar si esas son relevantes a la pregunta; leerlas solo si sí.
-- Si una página tiene fuente en `sources:` y la pregunta requiere precisión de enunciado, leer también `wiki/sources/<source-slug>.md` para confirmar página/sección.
+- Si una página tiene fuente en `sources:` y la pregunta requiere precisión de enunciado, leer también `wiki/sources/<source-slug>.md` para confirmar página/sección. Los exámenes/parciales **no** están en `sources:` sino en `assessed_by:` (apuntan a `wiki/assessments/`); consultarlos si la pregunta es "¿cómo se evalúa esto?" o pide ejercicios.
 
 ---
 
