@@ -664,17 +664,30 @@ def ingest_status_cmd(
     table.add_column("PDF")
     table.add_column("chunks", justify="right")
     table.add_column("sources")
+    table.add_column("pendientes")
     for s in statuses:
         if s.n_chunks:
             chunks_cell = f"{len(s.covered_chunks)}/{s.n_chunks}"
+            if s.status == "partial":
+                raw_dir_local = find_raw_dir(raw)
+                all_chunks = sorted(
+                    p.name for p in (raw_dir_local / s.pdf_key.replace(".pdf", "")).iterdir()
+                    if p.is_file() and p.suffix == ".md"
+                ) if (raw_dir_local / s.pdf_key.replace(".pdf", "")).exists() else []
+                missing = [c for c in all_chunks if c not in s.covered_chunks]
+                pending_cell = ", ".join(missing) if missing else "—"
+            else:
+                pending_cell = "—"
         else:
             chunks_cell = "—"
+            pending_cell = "—"
         sources_cell = ", ".join(s.sources) if s.sources else "—"
         table.add_row(
             f"[{color.get(s.status, 'white')}]{s.status}[/]",
             s.pdf_key,
             chunks_cell,
             sources_cell,
+            pending_cell,
         )
     console.print(table)
 
