@@ -131,8 +131,8 @@ def check_read(root: Path, target: Path) -> tuple[bool, str]:
     except ValueError:
         return True, ""  # fuera del repo: no es asunto del firewall
 
-    if rel.startswith("raw/"):
-        return False, f"firewall /practice (T={session.topic}): raw/ está bloqueado"
+    if rel.startswith("raw/") or rel.startswith("extracted/"):
+        return False, f"firewall /practice (T={session.topic}): raw/ y extracted/ están bloqueados"
     if rel.startswith("wiki/"):
         slug = Path(rel).stem
         if slug in session.blocked_slugs:

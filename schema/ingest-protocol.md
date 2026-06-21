@@ -31,15 +31,15 @@ El ingest es en **dos fases**: primero se analiza (Fase 1, no se escribe nada), 
 **Restricción de tokens — nunca leer el PDF directamente.** Antes de leer nada, verificar que la fuente tenga markdown extraído:
 
 - Si `raw/.atlas-extract.json` no registra esta fuente como `converted`, o no hay carpeta de chunks ni `.md` monolítico: **abortar con**:
-  > "La fuente `<nombre>.pdf` no tiene markdown extraído. Corré `atlas extract raw/<nombre>.pdf` y volvé a intentarlo."
+  > "La fuente `<nombre>.pdf` no tiene markdown extraído. Corré `atlas extract raw/<nombre>.pdf` y volvé a intentarlo." (El artefacto quedará en `extracted/`.)
 - El fallback visual al PDF (`Read` sobre el `.pdf`) **está prohibido en modo normal**: consume 5-10× más tokens por página que el markdown extraído. Solo usarlo si el usuario lo pide explícitamente después del aviso.
 
 Elegir la fuente más barata disponible, en este orden de preferencia:
 
-1. **TOC + chunks (docs grandes).** Si existe `raw/<mismo-nombre>.toc.md` (lo produce `atlas extract` al segmentar libros/apuntes grandes, ver `tools/`), leer **primero el TOC**: es un índice compacto (árbol de headings + página + tokens estimados + qué chunk contiene cada sección). A partir del TOC se arma el mapa de conceptos **sin leer el cuerpo entero**. Para profundizar en una sección, leer **solo** el chunk correspondiente de `raw/<mismo-nombre>/` (p.ej. `raw/<nombre>/02-extremos.md`). **Nunca** leer el monolítico `raw/<nombre>.md` cuando hay TOC: anula el ahorro de tokens. Si el usuario pide un rango de páginas, mapearlo a chunks vía la columna de páginas del TOC.
+1. **TOC + chunks (docs grandes).** Si existe `extracted/<mismo-nombre>.toc.md` (lo produce `atlas extract` al segmentar libros/apuntes grandes, ver `tools/`), leer **primero el TOC**: es un índice compacto (árbol de headings + página + tokens estimados + qué chunk contiene cada sección). A partir del TOC se arma el mapa de conceptos **sin leer el cuerpo entero**. Para profundizar en una sección, leer **solo** el chunk correspondiente de `extracted/<mismo-nombre>/` (p.ej. `extracted/<nombre>/02-extremos.md`). **Nunca** leer el monolítico `extracted/<nombre>.md` cuando hay TOC: anula el ahorro de tokens. Si el usuario pide un rango de páginas, mapearlo a chunks vía la columna de páginas del TOC.
 
-   **Cobertura total (regla de iteración):** Listar todos los archivos `.md` de `raw/<nombre>/` al inicio de Fase 1. En Fase 2, procesar cada chunk en orden y declararlo cubierto en `chunks:` a medida que se termina. **No declarar el ingest completo hasta que `chunks:` contenga todos los archivos del directorio.** Si la sesión se corta, `atlas ingest-status` muestra `partial X/N` con los chunks pendientes — retomar desde ahí en la próxima sesión.
-2. **Markdown monolítico (docs chicos).** Si **no** hay `.toc.md` pero sí `raw/<mismo-nombre>.md`, leerlo completo: para exámenes y papers cortos el costo es bajo y trae LaTeX + captions de figuras.
+   **Cobertura total (regla de iteración):** Listar todos los archivos `.md` de `extracted/<nombre>/` al inicio de Fase 1. En Fase 2, procesar cada chunk en orden y declararlo cubierto en `chunks:` a medida que se termina. **No declarar el ingest completo hasta que `chunks:` contenga todos los archivos del directorio.** Si la sesión se corta, `atlas ingest-status` muestra `partial X/N` con los chunks pendientes — retomar desde ahí en la próxima sesión.
+2. **Markdown monolítico (docs chicos).** Si **no** hay `.toc.md` pero sí `extracted/<mismo-nombre>.md`, leerlo completo: para exámenes y papers cortos el costo es bajo y trae LaTeX + captions de figuras.
 
 - Construir un mapa interno: para cada sección listar los conceptos / teoremas / métodos / ejemplos que aparecen (con el TOC, esto sale casi directo de los headings).
 - No escribir nada todavía.
@@ -96,9 +96,9 @@ Frontmatter: seguir el **frontmatter común** de `schema/wiki-conventions.md` (s
 
 - `source_kind: book | paper | notes | lecture`
 - `path: "raw/<archivo>.pdf"` — ruta al `.pdf` (fuente inmutable). Campo de tracking: `atlas ingest-status` lo usa para saber qué PDFs ya tienen coverage.
-- `chunks: ["raw/<nombre>/01-intro.md", "raw/<nombre>/03-svd.md"]` — lista de chunks de `raw/<nombre>/` que Claude leyó para producir esta source. Permite calcular cobertura parcial cuando el libro es grande y se ingresa en varias pasadas. Omitir si el PDF no tiene carpeta de chunks.
-- `extracted: "raw/<archivo>.md"` — legacy: markdown monolítico (solo para docs sin chunks). No usar en docs segmentados; preferir `chunks:`.
-- `toc: "raw/<archivo>.toc.md"` — opcional: índice de segmentación, si el doc se segmentó.
+- `chunks: ["extracted/<nombre>/01-intro.md", "extracted/<nombre>/03-svd.md"]` — lista de chunks de `extracted/<nombre>/` que Claude leyó para producir esta source. Permite calcular cobertura parcial cuando el libro es grande y se ingresa en varias pasadas. Omitir si el PDF no tiene carpeta de chunks.
+- `extracted: "extracted/<archivo>.md"` — legacy: markdown monolítico (solo para docs sin chunks). No usar en docs segmentados; preferir `chunks:`.
+- `toc: "extracted/<archivo>.toc.md"` — opcional: índice de segmentación, si el doc se segmentó.
 - `pages: "1-24"` — rango de páginas cubierto, opcional.
 - `covers_concepts` / `covers_theorems` / `covers_methods` — wikilinks a lo que la fuente cubre.
 
@@ -107,7 +107,7 @@ Cuerpo:
 ```markdown
 ## Mapa de coverage
 
-Si el doc tiene `raw/<nombre>.toc.md`, esta tabla se deriva casi directo de él: cada fila del TOC (sección + página) ya trae el heading; basta anotar el concepto wiki que le corresponde y, opcionalmente, el chunk donde vive.
+Si el doc tiene `extracted/<nombre>.toc.md`, esta tabla se deriva casi directo de él: cada fila del TOC (sección + página) ya trae el heading; basta anotar el concepto wiki que le corresponde y, opcionalmente, el chunk donde vive.
 
 | Sección / diapositiva | Página | Concepto wiki |
 |---|---|---|
@@ -205,7 +205,7 @@ Además, agregar una entrada al final de `wiki/log.md` con el resumen narrativo 
 ```markdown
 ## <fecha> — <título de la fuente>
 
-- Fuente: `[[<slug>]]` (`raw/<archivo>.pdf`)
+- Fuente: `[[<slug>]]` (`raw/<archivo>.pdf`)  ← PDF inmutable, siempre en `raw/`
 - Chunks procesados: N/M (o "completo" si es sin chunks)
 - Páginas creadas: ⟨lista de slugs⟩
 - Páginas actualizadas: ⟨lista de slugs⟩
@@ -249,12 +249,12 @@ Activado con `/ingest --compile`. Escanea `raw/` en busca de archivos no registr
    - Los **`.pdf`** (unidad primaria de una fuente).
    - Los `.txt`/`.md` **nativos**: los que no tienen un PDF homónimo **y** no son artefactos de extracción.
 
-   **Excluir siempre los artefactos que produce `atlas extract`** — no son fuentes: el `.md` monolítico, el `<nombre>.toc.md`, y **todo** lo que viva dentro de un directorio de chunks `raw/<nombre>/`. La forma fiable de identificarlos es leer `raw/.atlas-extract.json` y descartar todo `md_path`, `toc_path` y cualquier archivo bajo un `chunks_dir`. **Un documento segmentado es una sola fuente = su `.pdf`**; sus chunks y su TOC nunca se enumeran como fuentes separadas (al ingerir esa fuente, el Paso 1 ya lee el TOC y solo los chunks relevantes).
+   **Excluir siempre los artefactos que produce `atlas extract`** — no son fuentes: viven en `extracted/` (`.md` monolítico, `.toc.md`, carpetas de chunks). La forma fiable de identificarlos es leer `raw/.atlas-extract.json` y descartar todo `md_path`, `toc_path` y cualquier archivo bajo un `chunks_dir`. **Un documento segmentado es una sola fuente = su `.pdf`** (en `raw/`); sus chunks y su TOC en `extracted/` nunca se enumeran como fuentes separadas (al ingerir esa fuente, el Paso 1 ya lee el TOC y solo los chunks relevantes).
 2. Leer los frontmatters de todos los archivos bajo `wiki/sources/` y extraer el campo `path:` de cada uno.
 3. Construir la lista de **archivos no registrados**: fuentes en `raw/` cuyo path no aparece en ningún `path:` de `wiki/sources/`.
    Además, correr `atlas ingest-status --json`: las fuentes ya registradas con estado `stale` (su raw cambió desde la última ingesta) son candidatas a **re-ingestión**; las `current` se saltean (cero llamadas LLM). Sumar las `stale` a la lista a procesar.
 4. Para cada fuente nueva, chequear si existe su `.md` cacheado (mismo nombre, extensión `.md`). Si **falta**, avisar y sugerir correr la extracción local antes de ingerir (no convertir el PDF desde Claude):
-   > "`<archivo>.pdf` no tiene markdown extraído. Corré `atlas extract` (o `atlas extract raw/<archivo>.pdf`) y volvé a `/ingest --compile`. Si querés ingerirlo igual ahora, lo leo visualmente del PDF (más caro en tokens)."
+   > "`<archivo>.pdf` no tiene markdown extraído. Corré `atlas extract` (o `atlas extract raw/<archivo>.pdf`) y volvé a `/ingest --compile`. El artefacto quedará en `extracted/`. Si querés ingerirlo igual ahora, lo leo visualmente del PDF (más caro en tokens)."
 
 Si no hay archivos nuevos:
 > "No hay archivos nuevos en `raw/`. Tirá un PDF ahí y volvé a correr `/ingest --compile`."

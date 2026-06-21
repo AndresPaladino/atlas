@@ -64,7 +64,7 @@ Si `A.requires` incluye `[[B]]`, entonces `B.unlocks` debe incluir `[[A]]`.
 
 Archivos bajo `raw/` (PDFs) que no tienen ningún `wiki/sources/*.md` cuyo `path:` apunte a ellos.
 
-Excepción: archivos `.md` y `.jpeg`/`.jpg`/`.png` en `raw/` son extracciones y figuras producidas por `atlas-local` — no son fuentes primarias, se omiten de este check.
+Nota: los artefactos de extracción (`.md`, `.toc.md`, carpetas de chunks, imágenes) ya **no** viven en `raw/` sino en `extracted/` — no confundir. En `raw/` solo hay PDFs y el manifest.
 
 **Finding**: `source-not-ingested | raw/<path>`
 

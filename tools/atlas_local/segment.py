@@ -337,18 +337,21 @@ def segment_markdown(
     n_pages: int,
     target_tokens: int = DEFAULT_TARGET_TOKENS,
     max_tokens: int = DEFAULT_MAX_TOKENS,
+    artifacts_base: Path | None = None,
 ) -> SegmentResult:
     """Segmenta un markdown ya escrito: produce `<stem>.toc.md` y `<stem>/`.
 
-    ``md_path`` es la ruta del monolítico (p.ej. raw/Notas.md); los artefactos
-    quedan como hermanos: raw/Notas.toc.md y raw/Notas/."""
+    ``md_path`` es la ruta del monolítico (p.ej. extracted/Notas.md).
+    ``artifacts_base`` es el directorio donde se escriben toc y chunks
+    (default: mismo directorio que md_path para retrocompat)."""
+    base = artifacts_base if artifacts_base is not None else md_path.parent
     blocks = parse_blocks(markdown)
     chunks = plan_chunks(blocks, target_tokens=target_tokens, max_tokens=max_tokens)
 
-    chunks_dir = md_path.with_suffix("")  # raw/Notas
+    chunks_dir = base / md_path.stem  # extracted/Notas
     chunk_paths = write_chunks(chunks, chunks_dir, source_rel)
 
-    toc_path = md_path.with_suffix(".toc.md")
+    toc_path = base / (md_path.stem + ".toc.md")  # extracted/Notas.toc.md
     toc = render_toc(
         blocks, chunks, source_rel=source_rel,
         chunks_dirname=chunks_dir.name, n_pages=n_pages,

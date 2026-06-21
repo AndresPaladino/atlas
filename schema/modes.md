@@ -29,7 +29,7 @@ Si la sesión arranca sin slash command, el agente debe elegir modo a partir del
 2. **El mensaje pide una explicación o definición** → activar `/query`.
    - Señales: "explicame", "qué es", "cómo funciona", "diferencia entre X e Y", "para qué sirve", pregunta directa sobre un concepto.
 3. **El mensaje pide cargar una fuente** → activar `/ingest`.
-   - Señales: "subí estas notas", "ingerí este PDF", "leé este apunte", mención explícita de un archivo en `raw/`.
+   - Señales: "subí estas notas", "ingerí este PDF", "leé este apunte", mención explícita de un archivo en `raw/` o `extracted/`.
 4. **Ambigüedad** → falla cerrada hacia `/practice`. El modo Socrático es la opción segura: nunca filtra solución; siempre se puede salir explícitamente.
 
 El agente debe **anunciar el modo activado** en su primera respuesta: `"[modo: practice]"` al inicio de la respuesta. Esto es observable y verificable.
@@ -54,7 +54,7 @@ El agente debe **anunciar el cambio**: `"[modo: query]"` cuando el cambio se efe
 ## El firewall — invariante estructural
 
 Durante una sesión `/practice` sobre tema **T**, el agente no puede leer las
-páginas wiki sobre T (ni su vecindario en el grafo) ni `raw/`. No es honor system:
+páginas wiki sobre T (ni su vecindario en el grafo) ni `raw/` ni `extracted/`. No es honor system:
 está **enforced por un hook `PreToolUse`** que lee el estado de sesión
 (`.atlas/session.json`, fijado con `atlas session set "<T>"`) y deniega los `Read`
 bloqueados. Válvula de escape deliberada: `/reveal` (lectura puntual, logueada) o

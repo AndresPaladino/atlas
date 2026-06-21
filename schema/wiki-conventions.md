@@ -77,7 +77,7 @@ Reglas canónicas de delimitadores y comandos KaTeX: `schema/output-conventions.
 
 ## Vault de Obsidian
 
-El vault es la carpeta `wiki/` (no la raíz del repo). Abrir `wiki/` en Obsidian — así el grafo solo ve el wiki, no `raw/`/`schema/`/`tools/`. La config (`wiki/.obsidian/graph.json`, tema) se versiona; `workspace.json` está gitignored (estado de UI).
+El vault es la carpeta `wiki/` (no la raíz del repo). Abrir `wiki/` en Obsidian — así el grafo solo ve el wiki, no `raw/`/`extracted/`/`schema/`/`tools/`. La config (`wiki/.obsidian/graph.json`, tema) se versiona; `workspace.json` está gitignored (estado de UI).
 
 ## Wikilinks y rutas
 

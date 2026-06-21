@@ -121,7 +121,7 @@ def _chunks_covered_by(pages: list[Page], chunks_dir: str, repo_root: Path) -> d
     Devuelve {chunk_filename: [slug, ...]}
     """
     covered: dict[str, list[str]] = {}
-    chunks_prefix = chunks_dir.rstrip("/") + "/"   # ej. "raw/DDSE/"
+    chunks_prefix = chunks_dir.rstrip("/") + "/"   # ej. "extracted/DDSE/"
 
     for page in pages:
         if page.folder not in _INGESTABLE_FOLDERS:
@@ -147,7 +147,7 @@ def _chunks_covered_by(pages: list[Page], chunks_dir: str, repo_root: Path) -> d
     return covered
 
 
-def raw_ingest_status(pages: list[Page], raw_dir: Path, repo_root: Path) -> list[RawStatus]:
+def raw_ingest_status(pages: list[Page], raw_dir: Path, repo_root: Path, artifacts_dir: Path | None = None) -> list[RawStatus]:
     """Vista de inventario: estado de ingestión de cada PDF en raw/.
 
     Arranca desde el Manifest (raw/.atlas-extract.json) para conocer qué PDFs
@@ -157,7 +157,8 @@ def raw_ingest_status(pages: list[Page], raw_dir: Path, repo_root: Path) -> list
     - partial   : hay sources pero no todos los chunks están cubiertos
     - ingested  : hay al menos una source (y si hay chunks, todos están cubiertos)
     """
-    manifest = Manifest.load(raw_dir)
+    art_dir = artifacts_dir if artifacts_dir is not None else raw_dir
+    manifest = Manifest.load(raw_dir, art_dir)
 
     # índice: path: "raw/X.pdf" → slugs de sources que lo declaran
     path_to_slugs: dict[str, list[str]] = {}
@@ -184,8 +185,9 @@ def raw_ingest_status(pages: list[Page], raw_dir: Path, repo_root: Path) -> list
             continue
 
         # PDF con carpeta de chunks
-        chunks_dir_rel = f"raw/{entry.chunks_dir}"   # ej. "raw/DDSE"
-        chunks_dir_abs = raw_dir / entry.chunks_dir
+        art_prefix = art_dir.relative_to(repo_root).as_posix()
+        chunks_dir_rel = f"{art_prefix}/{entry.chunks_dir}"   # ej. "extracted/DDSE"
+        chunks_dir_abs = art_dir / entry.chunks_dir
         all_chunks = sorted(
             p.name for p in chunks_dir_abs.iterdir()
             if p.is_file() and p.suffix == ".md"
@@ -240,16 +242,19 @@ def _chunks_block(repo_root: Path, page: Page) -> str | None:
         return None
     pdf_key = str(raw_path)[len("raw/"):] if str(raw_path).startswith("raw/") else str(raw_path)
     raw_dir = repo_root / "raw"
-    entry = Manifest.load(raw_dir)._entries.get(pdf_key)
+    artifacts_dir = repo_root / "extracted"
+    art_dir = artifacts_dir if artifacts_dir.is_dir() else raw_dir
+    entry = Manifest.load(raw_dir, art_dir)._entries.get(pdf_key)
     if entry is None or not entry.chunks_dir:
         return None
-    chunks_abs = raw_dir / entry.chunks_dir
+    chunks_abs = art_dir / entry.chunks_dir
     names = sorted(
         p.name for p in chunks_abs.iterdir() if p.is_file() and p.suffix == ".md"
     ) if chunks_abs.exists() else []
     if not names:
         return None
-    lines = ["chunks:\n"] + [f"  - raw/{entry.chunks_dir}/{n}\n" for n in names]
+    art_prefix = art_dir.relative_to(repo_root).as_posix()
+    lines = ["chunks:\n"] + [f"  - {art_prefix}/{entry.chunks_dir}/{n}\n" for n in names]
     return "".join(lines)
 
 

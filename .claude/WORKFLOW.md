@@ -17,7 +17,7 @@ git push origin main          # al terminar (o después de cada sesión de estud
 ## Cuando mejorás schema/ o tools/
 
 **Regla base:** separá los cambios en commits distintos. Un commit que va a
-`upstream` **no puede tocar `raw/` ni `wiki/`** (datos personales). Mantené la
+`upstream` **no puede tocar `raw/`, `extracted/` ni `wiki/`** (datos personales). Mantené la
 funcionalidad (`tools/`, `schema/`, `.claude/`) y los datos personales en
 commits separados desde el principio.
 
@@ -51,6 +51,8 @@ git checkout main && git branch -D upstream-sync # limpieza
 Después, `git pull origin main` en la otra máquina trae la funcionalidad (y los
 datos personales) por el repo privado. El público es solo para compartir
 funcionalidad hacia afuera.
+
+> **Nota de layout:** `raw/` contiene solo PDFs + `.atlas-extract.json`. Los artefactos de extracción (`.md`, `.toc.md`, carpetas de chunks) viven en `extracted/`. Tanto `raw/` como `extracted/` son datos personales — nunca van a `upstream`.
 
 ## Setup en Mac (primera vez)
 
