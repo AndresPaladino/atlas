@@ -28,13 +28,18 @@ El ingest es en **dos fases**: primero se analiza (Fase 1, no se escribe nada), 
 
 ## Paso 1 — Leer y mapear
 
+**Restricción de tokens — nunca leer el PDF directamente.** Antes de leer nada, verificar que la fuente tenga markdown extraído:
+
+- Si `raw/.atlas-extract.json` no registra esta fuente como `converted`, o no hay carpeta de chunks ni `.md` monolítico: **abortar con**:
+  > "La fuente `<nombre>.pdf` no tiene markdown extraído. Corré `atlas extract raw/<nombre>.pdf` y volvé a intentarlo."
+- El fallback visual al PDF (`Read` sobre el `.pdf`) **está prohibido en modo normal**: consume 5-10× más tokens por página que el markdown extraído. Solo usarlo si el usuario lo pide explícitamente después del aviso.
+
 Elegir la fuente más barata disponible, en este orden de preferencia:
 
 1. **TOC + chunks (docs grandes).** Si existe `raw/<mismo-nombre>.toc.md` (lo produce `atlas extract` al segmentar libros/apuntes grandes, ver `tools/`), leer **primero el TOC**: es un índice compacto (árbol de headings + página + tokens estimados + qué chunk contiene cada sección). A partir del TOC se arma el mapa de conceptos **sin leer el cuerpo entero**. Para profundizar en una sección, leer **solo** el chunk correspondiente de `raw/<mismo-nombre>/` (p.ej. `raw/<nombre>/02-extremos.md`). **Nunca** leer el monolítico `raw/<nombre>.md` cuando hay TOC: anula el ahorro de tokens. Si el usuario pide un rango de páginas, mapearlo a chunks vía la columna de páginas del TOC.
 
    **Cobertura total (regla de iteración):** Listar todos los archivos `.md` de `raw/<nombre>/` al inicio de Fase 1. En Fase 2, procesar cada chunk en orden y declararlo cubierto en `chunks:` a medida que se termina. **No declarar el ingest completo hasta que `chunks:` contenga todos los archivos del directorio.** Si la sesión se corta, `atlas ingest-status` muestra `partial X/N` con los chunks pendientes — retomar desde ahí en la próxima sesión.
 2. **Markdown monolítico (docs chicos).** Si **no** hay `.toc.md` pero sí `raw/<mismo-nombre>.md`, leerlo completo: para exámenes y papers cortos el costo es bajo y trae LaTeX + captions de figuras.
-3. **PDF visual (fallback).** Si no hay `.md`, hacer `Read` visual sobre el PDF — fiel pero caro en tokens.
 
 - Construir un mapa interno: para cada sección listar los conceptos / teoremas / métodos / ejemplos que aparecen (con el TOC, esto sale casi directo de los headings).
 - No escribir nada todavía.
@@ -161,7 +166,29 @@ Aristas son del DAG conceptual, no de la fuente. La fuente solo aporta la oportu
 
 ---
 
-## Paso 7 — Sellar el hash de ingestión
+## Paso 7 — Registrar progreso en la cola
+
+Si la fuente tiene chunks (docs grandes), registrar el avance en la cola de ingest:
+
+```bash
+# Al iniciar Fase 2 (primera vez):
+atlas queue add "DDSE.pdf" --chunks 178
+atlas queue start "DDSE.pdf"
+
+# Después de procesar cada chunk:
+atlas queue update "DDSE.pdf" --chunk "02-svd.md" --slug "ddse-brunton"
+
+# Al terminar todos los chunks:
+atlas queue done "DDSE.pdf"
+```
+
+Esto permite retomar sesiones cortadas: la próxima vez que corra `/ingest --compile`,
+`atlas queue list` mostrará el PDF como `in-progress` con los chunks ya procesados,
+y se retoma desde el primero que falte en lugar de empezar de cero.
+
+Para fuentes sin chunks (exámenes, papers cortos), omitir estos comandos.
+
+## Paso 8 — Sellar el hash de ingestión
 
 Por cada fuente ingerida, correr `atlas ingest-stamp <slug>`: registra en su
 frontmatter el hash del raw (`ingested_sha256`) y la lista `chunks:` cuando el PDF
@@ -176,7 +203,7 @@ ya declarados).
 
 ---
 
-## Paso 8 — Regenerar índice y áreas
+## Paso 9 — Regenerar índice y áreas
 
 Correr `atlas index`. Regenera `wiki/index.md` y los MOCs de `wiki/areas/*.md`
 desde el filesystem (entre marcadores `<!-- atlas:auto -->`, preservando las
@@ -187,16 +214,27 @@ cumple el contrato (`schema/wiki-conventions.md`).
 
 ---
 
-## Paso 9 — Commit (= log)
+## Paso 10 — Commit y entrada en log
 
-El log de mutaciones se deriva de git: la mutación real *es* el commit. No editar
-`wiki/log.md` a mano. Dejar (o sugerir) un commit con la convención:
+El log de mutaciones se deriva de git: la mutación real *es* el commit. Dejar (o sugerir) un commit con la convención:
 
 ```
 ingest: <título de la fuente> — N páginas creadas, M actualizadas
 ```
 
-`atlas log` lo renderiza después (`git log -- wiki/`).
+Además, agregar una entrada al final de `wiki/log.md` con el resumen narrativo de la sesión:
+
+```markdown
+## <fecha> — <título de la fuente>
+
+- Fuente: `[[<slug>]]` (`raw/<archivo>.pdf`)
+- Chunks procesados: N/M (o "completo" si es sin chunks)
+- Páginas creadas: ⟨lista de slugs⟩
+- Páginas actualizadas: ⟨lista de slugs⟩
+```
+
+Esto permite retomar el contexto en sesiones futuras sin releer git log.
+`atlas log` muestra el log de commits; `wiki/log.md` tiene el detalle narrativo.
 
 ---
 
@@ -264,7 +302,9 @@ Para cada archivo seleccionado, ejecutar el flujo normal de ingest completo (Fas
 
 > "✓ `nombre-archivo.pdf` → fuente `[[slug]]`, N páginas creadas, M actualizadas."
 
-En compile, **omitir el Paso 7 (stamp) por fuente**: al terminar la secuencia, correr `atlas ingest-stamp --all` una sola vez. Sella todo lo ingerido (hash + `chunks:`) en un paso.
+En compile, **omitir el Paso 8 (stamp) por fuente**: al terminar la secuencia, correr `atlas ingest-stamp --all` una sola vez. Sella todo lo ingerido (hash + `chunks:`) en un paso.
+
+Al iniciar compile, consultar `atlas queue list` primero: si hay items `in-progress`, retomar desde el primer chunk no procesado en lugar de arrancar desde cero.
 
 ### Paso C4 — Resumen final
 
