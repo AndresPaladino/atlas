@@ -28,6 +28,10 @@ from .loader import Page
 
 _HASH_LINE = re.compile(r"^ingested_sha256:.*\n", re.MULTILINE)
 
+# Carpetas cuyas páginas declaran cobertura de un raw (path:/chunks:/ingested_sha256):
+# sources (material de estudio) y assessments (exámenes). Ambas se ingieren desde raw/.
+_INGESTABLE_FOLDERS = ("sources", "assessments")
+
 
 # ── vista de frescura (wiki/sources/ → raw/) ─────────────────────────────────
 
@@ -76,8 +80,8 @@ def source_status(repo_root: Path, page: Page) -> SourceStatus:
 
 
 def ingest_status(pages: list[Page], repo_root: Path) -> list[SourceStatus]:
-    """Vista de frescura: estado de cada página ya existente en wiki/sources/."""
-    return [source_status(repo_root, p) for p in pages if p.folder == "sources"]
+    """Vista de frescura: estado de cada página ingerida desde raw/ (sources + assessments)."""
+    return [source_status(repo_root, p) for p in pages if p.folder in _INGESTABLE_FOLDERS]
 
 
 # ── vista de inventario (raw/.atlas-extract.json → wiki/sources/) ────────────
@@ -120,7 +124,7 @@ def _chunks_covered_by(pages: list[Page], chunks_dir: str, repo_root: Path) -> d
     chunks_prefix = chunks_dir.rstrip("/") + "/"   # ej. "raw/DDSE/"
 
     for page in pages:
-        if page.folder != "sources":
+        if page.folder not in _INGESTABLE_FOLDERS:
             continue
         fm = page.frontmatter
 
@@ -158,7 +162,7 @@ def raw_ingest_status(pages: list[Page], raw_dir: Path, repo_root: Path) -> list
     # índice: path: "raw/X.pdf" → slugs de sources que lo declaran
     path_to_slugs: dict[str, list[str]] = {}
     for page in pages:
-        if page.folder != "sources":
+        if page.folder not in _INGESTABLE_FOLDERS:
             continue
         raw_path = page.frontmatter.get("path")
         if raw_path:
@@ -222,8 +226,35 @@ def _insert_frontmatter_line(text: str, line: str) -> str:
     return text
 
 
+def _chunks_block(repo_root: Path, page: Page) -> str | None:
+    """Bloque YAML ``chunks:`` con todos los .md del chunks_dir del raw de ``page``.
+
+    None si la fuente no tiene path: con carpeta de chunks en el Manifest, o si
+    el frontmatter ya declara ``chunks:`` (no pisamos lo que el ingestor puso).
+    """
+    fm = page.frontmatter
+    if fm.get("chunks") or fm.get("extracted"):
+        return None
+    raw_path = fm.get("path")
+    if not raw_path:
+        return None
+    pdf_key = str(raw_path)[len("raw/"):] if str(raw_path).startswith("raw/") else str(raw_path)
+    raw_dir = repo_root / "raw"
+    entry = Manifest.load(raw_dir)._entries.get(pdf_key)
+    if entry is None or not entry.chunks_dir:
+        return None
+    chunks_abs = raw_dir / entry.chunks_dir
+    names = sorted(
+        p.name for p in chunks_abs.iterdir() if p.is_file() and p.suffix == ".md"
+    ) if chunks_abs.exists() else []
+    if not names:
+        return None
+    lines = ["chunks:\n"] + [f"  - raw/{entry.chunks_dir}/{n}\n" for n in names]
+    return "".join(lines)
+
+
 def stamp_source(repo_root: Path, page: Page) -> str | None:
-    """Sella ``ingested_sha256`` en el frontmatter de la fuente. Devuelve el hash.
+    """Sella ``ingested_sha256`` (y ``chunks:`` si falta) en el frontmatter. Devuelve el hash.
 
     None si no se encuentra el archivo raw a hashear.
     """
@@ -234,5 +265,8 @@ def stamp_source(repo_root: Path, page: Page) -> str | None:
     text = page.path.read_text(encoding="utf-8")
     line = f"ingested_sha256: {digest}\n"
     new = _HASH_LINE.sub(line, text, count=1) if _HASH_LINE.search(text) else _insert_frontmatter_line(text, line)
+    chunks = _chunks_block(repo_root, page)
+    if chunks:
+        new = _insert_frontmatter_line(new, chunks)
     page.path.write_text(new, encoding="utf-8")
     return digest
