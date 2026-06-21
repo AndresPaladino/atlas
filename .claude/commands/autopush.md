@@ -19,13 +19,13 @@ git status --short
 git diff --name-only HEAD
 ```
 
-Si hay archivos modificados o sin trackear (excluí `.obsidian/` y archivos temporales), agrupalos en commits semánticamente coherentes:
+Si hay archivos modificados o sin trackear (excluí `wiki/.obsidian/workspace.json` y archivos temporales), agrupalos en commits semánticamente coherentes:
 
 **Regla de agrupación:**
 - Un commit puede mezclar `tools/` + `schema/` + `.claude/` (todo funcionalidad)
 - Un commit puede mezclar `wiki/` + `raw/` (todo contenido personal)
 - **Nunca** un mismo commit mezcla funcionalidad con `raw/`/`wiki/`
-- `.obsidian/` va en su propio commit o se ignora (es ruido de UI)
+- `wiki/.obsidian/` (config del vault: graph.json, tema) va con el grupo de contenido; `workspace.json` está gitignored (ruido de UI)
 
 **Para cada grupo**, generá un mensaje de commit descriptivo en español con el formato:
 ```

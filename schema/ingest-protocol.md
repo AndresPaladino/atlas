@@ -31,6 +31,8 @@ El ingest es en **dos fases**: primero se analiza (Fase 1, no se escribe nada), 
 Elegir la fuente más barata disponible, en este orden de preferencia:
 
 1. **TOC + chunks (docs grandes).** Si existe `raw/<mismo-nombre>.toc.md` (lo produce `atlas extract` al segmentar libros/apuntes grandes, ver `tools/`), leer **primero el TOC**: es un índice compacto (árbol de headings + página + tokens estimados + qué chunk contiene cada sección). A partir del TOC se arma el mapa de conceptos **sin leer el cuerpo entero**. Para profundizar en una sección, leer **solo** el chunk correspondiente de `raw/<mismo-nombre>/` (p.ej. `raw/<nombre>/02-extremos.md`). **Nunca** leer el monolítico `raw/<nombre>.md` cuando hay TOC: anula el ahorro de tokens. Si el usuario pide un rango de páginas, mapearlo a chunks vía la columna de páginas del TOC.
+
+   **Cobertura total (regla de iteración):** Listar todos los archivos `.md` de `raw/<nombre>/` al inicio de Fase 1. En Fase 2, procesar cada chunk en orden y declararlo cubierto en `chunks:` a medida que se termina. **No declarar el ingest completo hasta que `chunks:` contenga todos los archivos del directorio.** Si la sesión se corta, `atlas ingest-status` muestra `partial X/N` con los chunks pendientes — retomar desde ahí en la próxima sesión.
 2. **Markdown monolítico (docs chicos).** Si **no** hay `.toc.md` pero sí `raw/<mismo-nombre>.md`, leerlo completo: para exámenes y papers cortos el costo es bajo y trae LaTeX + captions de figuras.
 3. **PDF visual (fallback).** Si no hay `.md`, hacer `Read` visual sobre el PDF — fiel pero caro en tokens.
 
