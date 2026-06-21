@@ -17,10 +17,16 @@
 *.swp
 *.swo
 
-# Obsidian — estado de UI por máquina (cambia solo al abrir el grafo/ventanas)
-.obsidian/workspace.json
-.obsidian/workspace-mobile.json
-.obsidian/graph.json
+# Obsidian — el vault es wiki/. Versionar config estable (filtros/tema),
+# ignorar workspace.json (estado de UI, se reescribe con cada movimiento).
+# La raíz NO es vault: si Obsidian recrea /.obsidian, ignorarlo entero.
+/.obsidian/
+wiki/.obsidian/*
+!wiki/.obsidian/graph.json
+!wiki/.obsidian/plugins/
+wiki/.obsidian/plugins/*
+!wiki/.obsidian/plugins/appearance.json
+obsidian-plugin/
 
 # Raw sources — fuentes binarias / pesadas, no van al repo
 raw/**/*.pdf
