@@ -23,7 +23,7 @@ from rich.table import Table
 
 from . import __version__
 from . import segment as seg_mod  # lógica pura, sin torch
-from .config import resolve_tier
+from .config import resolve_tier, THROTTLE_PROFILES, DEFAULT_THROTTLE, ThrottleProfile
 from .device import detect_device, ollama_available
 from .manifest import Manifest, Status
 
@@ -42,6 +42,23 @@ def _resolve_cache_dir(raw_dir: Path) -> Path:
         return Path(env).expanduser().resolve()
     # raw_dir es atlas/raw/, su padre es la raíz del proyecto.
     return raw_dir.parent / ".atlas-cache"
+
+
+def _apply_throttle(profile: ThrottleProfile) -> None:
+    """Aplica nice/ionice al proceso actual. Silencioso si el SO no lo soporta."""
+    import sys
+    if sys.platform == "win32":
+        return
+    try:
+        os.nice(profile.nice)
+    except (OSError, AttributeError):
+        pass
+    if profile.ionice == 3:
+        try:
+            import subprocess as _sp
+            _sp.run(["ionice", "-c", "3", "-p", str(os.getpid())], capture_output=True)
+        except Exception:
+            pass  # ionice no disponible → sin efecto
 
 
 def _preflight(targets: list[Path], cache_dir: Path, raw_dir: Path) -> None:
@@ -241,7 +258,8 @@ def extract(
     cache: Optional[Path] = typer.Option(None, "--cache", help="Directorio para caché de modelos (default: misma unidad que raw/, o $ATLAS_CACHE)."),
     segment: Optional[bool] = typer.Option(None, "--segment/--no-segment", help="Forzar/inhibir la segmentación en chunks+TOC (default: auto por umbral de tamaño)."),
     chunk_tokens: int = typer.Option(seg_mod.DEFAULT_TARGET_TOKENS, "--chunk-tokens", help="Tamaño objetivo de cada chunk en tokens estimados."),
-    batch_pages: int = typer.Option(40, "--batch-pages", help="PDFs con más páginas que esto se extraen por lotes (acota la memoria). 0 = desactivar."),
+    batch_pages: int = typer.Option(0, "--batch-pages", help="PDFs con más páginas que esto se extraen por lotes. 0 = usar el del perfil --throttle."),
+    throttle: str = typer.Option(DEFAULT_THROTTLE, "--throttle", help="Perfil de uso de recursos: low|medium|full-throttle (default: medium)."),
 ) -> None:
     """Convierte PDFs de raw/ a markdown (sibling .md) y actualiza el manifest."""
     from .extract import Extractor  # import perezoso (arrastra torch/marker)
@@ -275,9 +293,19 @@ def extract(
     if captions and not do_captions:
         console.print("[yellow]--captions ignorado: el tier no lo soporta o falta Ollama.[/yellow]")
 
+    profile = THROTTLE_PROFILES.get(throttle)
+    if profile is None:
+        console.print(f"[red]--throttle debe ser low, medium o full-throttle.[/red]")
+        raise typer.Exit(1)
+
+    # batch_pages=0 significa "usar el del perfil"; cualquier otro valor explícito gana.
+    effective_batch = profile.batch_pages if batch_pages == 0 else batch_pages
+    _apply_throttle(profile)
+
     _preflight(targets, cache_dir, raw_dir)
 
     console.print(f"[cyan]Device:[/cyan] {device.label}  ·  [cyan]Tier:[/cyan] {tier.name}  ·  "
+                  f"[cyan]Throttle:[/cyan] {profile.name} (batch={effective_batch})  ·  "
                   f"[cyan]Captions:[/cyan] {'sí' if do_captions else 'no'}")
     console.print(f"[cyan]Caché modelos:[/cyan] {cache_dir}")
     console.print(f"[cyan]A extraer:[/cyan] {len(targets)} PDF(s)\n")
@@ -293,7 +321,7 @@ def extract(
             def _on_batch(start: int, end: int, total: int) -> None:
                 console.print(f"\n  [dim]lote p{start}-p{end}/{total} …[/dim]", end=" ")
 
-            result = extractor.extract(pdf, batch_pages=batch_pages, on_progress=_on_batch)
+            result = extractor.extract(pdf, batch_pages=effective_batch, on_progress=_on_batch)
 
             if do_captions and result.images:
                 from .caption import caption_images, inline_captions
@@ -825,6 +853,135 @@ def session_check(
     # markup=False: el mensaje lleva [[slug]] y va al hook / a Claude tal cual.
     console.print(reason, markup=False)
     raise typer.Exit(2)
+
+
+# ── queue (ingest persistente) ──────────────────────────────────────────────────
+queue_app = typer.Typer(help="Cola de ingest persistente (.atlas/ingest-queue.json).")
+app.add_typer(queue_app, name="queue")
+
+
+def _queue_root(wiki: Optional[Path]) -> Path:
+    return _require_wiki(wiki).parent
+
+
+@queue_app.command("list")
+def queue_list(
+    wiki: Optional[Path] = typer.Option(None, "--wiki"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Muestra el estado de la cola de ingest."""
+    import json as _json
+    from .wiki.queue import load_queue
+
+    queue = load_queue(_queue_root(wiki))
+    if as_json:
+        console.print_json(_json.dumps(queue.as_dict()))
+        return
+    if not queue.items:
+        console.print("[dim]Cola vacía.[/dim]")
+        return
+    table = Table(title="ingest-queue")
+    table.add_column("estado")
+    table.add_column("PDF")
+    table.add_column("progreso", justify="right")
+    table.add_column("source")
+    table.add_column("actualizado")
+    color = {"pending": "dim", "in-progress": "yellow", "done": "green", "failed": "red"}
+    for item in queue.items:
+        table.add_row(
+            f"[{color.get(item.status, 'white')}]{item.status}[/]",
+            item.pdf_key,
+            item.progress,
+            item.source_slug or "—",
+            item.updated_at or "—",
+        )
+    console.print(table)
+
+
+@queue_app.command("add")
+def queue_add(
+    pdf_key: str = typer.Argument(..., help="Ruta relativa a raw/, ej. 'DDSE.pdf'."),
+    chunks_total: int = typer.Option(0, "--chunks", help="Número total de chunks (0 si no aplica)."),
+    wiki: Optional[Path] = typer.Option(None, "--wiki"),
+) -> None:
+    """Agrega un PDF a la cola (pending). Idempotente."""
+    from .wiki.queue import add_item
+
+    item = add_item(_queue_root(wiki), pdf_key, chunks_total)
+    console.print(f"[cyan]queue:[/cyan] '{item.pdf_key}' → {item.status}")
+
+
+@queue_app.command("start")
+def queue_start(
+    pdf_key: str = typer.Argument(..., help="PDF a marcar como in-progress."),
+    wiki: Optional[Path] = typer.Option(None, "--wiki"),
+) -> None:
+    """Marca un item como in-progress (ingest arrancado)."""
+    from .wiki.queue import start_item
+
+    item = start_item(_queue_root(wiki), pdf_key)
+    if item is None:
+        console.print(f"[red]No encontré '{pdf_key}' en la cola.[/red]")
+        raise typer.Exit(1)
+    console.print(f"[yellow]in-progress:[/yellow] {item.pdf_key}")
+
+
+@queue_app.command("update")
+def queue_update(
+    pdf_key: str = typer.Argument(..., help="PDF en proceso."),
+    chunk: str = typer.Option(..., "--chunk", help="Nombre del chunk procesado, ej. '02-svd.md'."),
+    slug: Optional[str] = typer.Option(None, "--slug", help="Slug de la source wiki (si ya se creó)."),
+    wiki: Optional[Path] = typer.Option(None, "--wiki"),
+) -> None:
+    """Registra un chunk como procesado."""
+    from .wiki.queue import update_item
+
+    item = update_item(_queue_root(wiki), pdf_key, chunk, slug)
+    if item is None:
+        console.print(f"[red]No encontré '{pdf_key}' en la cola.[/red]")
+        raise typer.Exit(1)
+    console.print(f"[green]✓[/green] chunk '{chunk}' registrado · progreso {item.progress}")
+
+
+@queue_app.command("done")
+def queue_done(
+    pdf_key: str = typer.Argument(..., help="PDF a cerrar."),
+    wiki: Optional[Path] = typer.Option(None, "--wiki"),
+) -> None:
+    """Marca un item como done (ingest completo)."""
+    from .wiki.queue import done_item
+
+    item = done_item(_queue_root(wiki), pdf_key)
+    if item is None:
+        console.print(f"[red]No encontré '{pdf_key}' en la cola.[/red]")
+        raise typer.Exit(1)
+    console.print(f"[green]done:[/green] {item.pdf_key}")
+
+
+@queue_app.command("fail")
+def queue_fail(
+    pdf_key: str = typer.Argument(..., help="PDF a marcar como fallido."),
+    wiki: Optional[Path] = typer.Option(None, "--wiki"),
+) -> None:
+    """Marca un item como failed (sesión abortada, retomable)."""
+    from .wiki.queue import fail_item
+
+    item = fail_item(_queue_root(wiki), pdf_key)
+    if item is None:
+        console.print(f"[red]No encontré '{pdf_key}' en la cola.[/red]")
+        raise typer.Exit(1)
+    console.print(f"[red]failed:[/red] {item.pdf_key}")
+
+
+@queue_app.command("clear")
+def queue_clear(
+    wiki: Optional[Path] = typer.Option(None, "--wiki"),
+) -> None:
+    """Elimina items done y failed de la cola."""
+    from .wiki.queue import clear_done
+
+    n = clear_done(_queue_root(wiki))
+    console.print(f"[green]✓[/green] {n} item(s) eliminado(s).")
 
 
 if __name__ == "__main__":

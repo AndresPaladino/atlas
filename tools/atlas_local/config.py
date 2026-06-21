@@ -9,6 +9,7 @@ que los tiers chicos priorizan no quedarse sin memoria por sobre la velocidad.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Dict
 
 from .device import Device
 
@@ -27,6 +28,23 @@ class Tier:
     def summary(self) -> str:
         cap = f"captions ({self.caption_model})" if self.captions else "sin captions"
         return f"{self.name} · extractor={self.extractor} · {cap}"
+
+
+@dataclass(frozen=True)
+class ThrottleProfile:
+    name: str
+    batch_pages: int
+    nice: int   # Unix process priority (0=normal, 19=lowest); ignorado en Windows
+    ionice: int  # 0=none, 3=idle (Linux ionice clase idle)
+
+
+THROTTLE_PROFILES: Dict[str, ThrottleProfile] = {
+    "low":           ThrottleProfile("low",           batch_pages=10, nice=19, ionice=3),
+    "medium":        ThrottleProfile("medium",        batch_pages=20, nice=10, ionice=0),
+    "full-throttle": ThrottleProfile("full-throttle", batch_pages=40, nice=0,  ionice=0),
+}
+
+DEFAULT_THROTTLE = "medium"
 
 
 def resolve_tier(device: Device) -> Tier:
