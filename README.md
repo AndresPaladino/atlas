@@ -49,6 +49,8 @@ bash setup.sh
 
 `setup.sh` crea la estructura del wiki e instala el CLI `atlas`.
 
+Para navegar el wiki en Obsidian, abrí la carpeta `wiki/` como vault (no la raíz del repo).
+
 ## Uso
 
 ```bash
