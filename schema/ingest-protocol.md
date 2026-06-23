@@ -233,6 +233,8 @@ Resumen al usuario:
 ## Reglas de calidad
 
 - **No stubs vacíos**: toda página creada tiene al menos un párrafo de contenido. Si no se puede escribir un párrafo útil, mejor no crearla y dejar el concepto mencionado en `sources/`.
+- **Escribir desde el chunk, no desde el TOC**: el TOC sirve para *mapear* (Paso 1), nunca para *redactar*. Antes de escribir o actualizar una página hay que haber leído el chunk que la cubre. Síntoma de incumplimiento: una página sin cita con número de página / fórmula / enunciado textual de la fuente — eso es una definición genérica de memoria del LLM, no síntesis de la fuente. Si la fuente no aporta más que la definición de diccionario, la página queda en `sources/` como mención, no se crea.
+- **Profundidad = lo que da la fuente, no un párrafo**: "al menos un párrafo" es el piso anti-stub, no el objetivo. Una página vale lo que el chunk desarrolla: si la fuente da definición + intuición + propiedades + ejemplo + interpretación, todo eso entra (ver `[[curl]]`, `[[sparsity]]` como referencia de densidad esperable). Batches grandes diluyen la atención por página: preferir pasadas chicas y focalizadas a un commit que toca 20+ páginas en superficie.
 - **Citas obligatorias** en claims fuertes: el primer párrafo de una página nueva debe llevar al menos una cita a la fuente que la originó.
 - **Idioma según `wiki-conventions.md`**: slug en inglés para términos internacionales; español para específicos.
 - **No duplicar**: antes de crear, buscar por aliases en `wiki/index.md`. Si hay ambigüedad, preguntar al usuario.

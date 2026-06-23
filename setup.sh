@@ -30,6 +30,15 @@ for d in wiki/concepts wiki/theorems wiki/methods wiki/examples wiki/comparisons
 done
 echo "🧠  Wiki estructurado: wiki/{concepts,theorems,methods,examples,comparisons,sources}/"
 
+# ── 2b. Hook pre-push: bloquea pushear datos personales al repo público ───────
+HOOK_SRC="$ATLAS_PATH/tools/pre-push-guard.sh"
+HOOK_DST="$ATLAS_PATH/.git/hooks/pre-push"
+if [ -d "$ATLAS_PATH/.git" ] && [ -f "$HOOK_SRC" ]; then
+  ln -sf ../../tools/pre-push-guard.sh "$HOOK_DST"
+  chmod +x "$HOOK_SRC"
+  echo "🛡  Hook pre-push instalado (anti-leak hacia upstream)"
+fi
+
 # ── 3. Instalar CLI atlas (PDF → markdown) ────────────────────────────────────
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || -n "$WINDIR" ]]; then
   echo "⚙️  Instalando atlas (Windows)…"
