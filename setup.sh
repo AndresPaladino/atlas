@@ -23,12 +23,12 @@ else
   echo "   ✓ .claude/settings.local.json ya existe, salteando"
 fi
 
-# ── 2. Crear estructura de wiki/ ──────────────────────────────────────────────
-for d in wiki/concepts wiki/theorems wiki/methods wiki/examples wiki/comparisons wiki/sources; do
+# ── 2. Crear estructura de wiki/ y extracted/ ────────────────────────────────
+for d in wiki/concepts wiki/theorems wiki/methods wiki/examples wiki/comparisons wiki/sources extracted; do
   mkdir -p "$ATLAS_PATH/$d"
   [ ! -f "$ATLAS_PATH/$d/.gitkeep" ] && touch "$ATLAS_PATH/$d/.gitkeep"
 done
-echo "🧠  Wiki estructurado: wiki/{concepts,theorems,methods,examples,comparisons,sources}/"
+echo "🧠  Wiki estructurado: wiki/{concepts,theorems,methods,examples,comparisons,sources}/ + extracted/"
 
 # ── 2b. Hook pre-push: bloquea pushear datos personales al repo público ───────
 HOOK_SRC="$ATLAS_PATH/tools/pre-push-guard.sh"
