@@ -290,3 +290,28 @@ def test_ordering_pending_first(wiki):
     statuses = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent, wiki.parent / "extracted")
     assert statuses[0].pdf_key == "aaa.pdf"
     assert statuses[0].status == "pending"
+
+
+def test_stale_manifest_entry_without_raw_is_skipped(wiki):
+    """Entrada de manifest cuyo PDF ya no está en raw/ (carpeta renombrada) no se reporta."""
+    raw_dir = _make_raw_dir(wiki.parent)
+    _register_pdf(raw_dir, "vive.pdf")
+    _register_pdf(raw_dir, "fantasma.pdf")
+    (raw_dir / "fantasma.pdf").unlink()  # el PDF se fue, la entrada del manifest queda
+    statuses = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent, wiki.parent / "extracted")
+    keys = [s.pdf_key for s in statuses]
+    assert keys == ["vive.pdf"]
+
+
+def test_monolith_extracted_counts_as_full_coverage(wiki):
+    """Source legacy monolítica (extracted: extracted/X.md) cubre un PDF re-chunkeado → ingested, no partial."""
+    raw_dir = _make_raw_dir(wiki.parent)
+    _register_pdf(raw_dir, "libro.pdf", chunks=["01-intro.md", "02-svd.md", "03-pca.md"])
+    write_page(wiki, "sources", "libro-mono",
+               "type: source\ntitle: Libro\nsource_kind: book\n"
+               "path: raw/libro.pdf\n"
+               "extracted: extracted/libro.md\n"  # el monolito, no un chunk
+               "areas: [math]\ncreated: 2026-01-01\nupdated: 2026-01-01")
+    s = raw_ingest_status(load_wiki(wiki), raw_dir, wiki.parent, wiki.parent / "extracted")[0]
+    assert s.status == "ingested"
+    assert s.uncovered_chunks_count == 0

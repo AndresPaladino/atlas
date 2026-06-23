@@ -171,6 +171,11 @@ def raw_ingest_status(pages: list[Page], raw_dir: Path, repo_root: Path, artifac
 
     results: list[RawStatus] = []
     for pdf_key, entry in manifest._entries.items():
+        # El manifest acumula entradas de extracciones pasadas; si el PDF ya no
+        # está en raw/ es un fantasma (carpeta renombrada, fuente movida) y no
+        # debe reportarse — si no, inunda la tabla de 'pending' espurios.
+        if not (raw_dir / pdf_key).exists():
+            continue
         slugs = path_to_slugs.get(f"raw/{pdf_key}", [])
 
         if not entry.chunks_dir:
@@ -196,10 +201,21 @@ def raw_ingest_status(pages: list[Page], raw_dir: Path, repo_root: Path, artifac
         covered_map = _chunks_covered_by(pages, chunks_dir_rel, repo_root)
         covered = [c for c in all_chunks if c in covered_map]
 
+        # Convención legacy: la fuente se ingirió como un único .md monolítico
+        # (extracted: extracted/X.md) y el PDF se re-chunkeó *después*. El monolito
+        # cubre todo el PDF aunque no enumere los chunks → no es 'partial' espurio.
+        monolith_md = f"{art_prefix}/{entry.md_path}"
+        monolith = any(
+            str(p.frontmatter.get("extracted") or "") == monolith_md
+            for p in pages if p.slug in slugs
+        )
+
         if not slugs:
             status = "pending"
-        elif len(covered) >= len(all_chunks) and all_chunks:
+        elif monolith or (len(covered) >= len(all_chunks) and all_chunks):
             status = "ingested"
+            if monolith and not covered:
+                covered = all_chunks   # reflejar cobertura total en el conteo
         else:
             status = "partial"
 
