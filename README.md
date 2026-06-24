@@ -64,12 +64,28 @@ Para navegar el wiki en Obsidian, abrí la carpeta `wiki/` como vault (no la ra�
 
 ## Verificá la instalación
 
+Ninguno de estos pasos descarga modelos de ML.
+
 ```bash
-atlas doctor   # device, torch, tier de extracción y disponibilidad de captions
-atlas status   # PDFs pendientes / convertidos en raw/
+atlas doctor     # device, torch, tier de extracción y disponibilidad de captions
+atlas validate   # valida el frontmatter de todo el wiki (debe decir "0 errores")
+atlas lint       # audita el grafo (orphans, links/aristas rotos)
 ```
 
-`atlas doctor` no descarga modelos: imprime el diagnóstico del entorno (GPU/CPU, si torch está disponible, qué extractor usará). Si corre sin error, el CLI quedó bien instalado.
+`atlas doctor` imprime el diagnóstico del entorno (GPU/CPU, si torch está disponible, qué extractor usará). Si los tres corren sin error, el CLI quedó bien instalado.
+
+## Quickstart — tu primera `/query` sin ingestar nada
+
+El repo trae un **wiki semilla** de 3 páginas autocontenidas (derivada → teorema del valor medio → ejemplo, todo de dominio público) para que pruebes el flujo sin meter un PDF ni descargar modelos.
+
+```bash
+claude                                          # abrir Claude Code en la raíz
+/query ¿qué dice el teorema del valor medio?    # responde citando el wiki semilla
+```
+
+Atlas localiza las páginas `seed-*` en [`wiki/index.md`](wiki/index.md), las lee y sintetiza una respuesta con `[[wikilinks]]`. Si querés ver el contenido sin Claude, abrí [`wiki/theorems/seed-mean-value-theorem.md`](wiki/theorems/seed-mean-value-theorem.md) directamente.
+
+Cuando empieces tu propio wiki, borrá las páginas `seed-*` (`rm wiki/**/seed-*.md && atlas index`).
 
 ## Uso
 

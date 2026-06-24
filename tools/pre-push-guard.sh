@@ -34,7 +34,16 @@ while read -r local_ref local_sha remote_ref remote_sha || [ -n "$local_ref" ]; 
     range="$remote_sha..$local_sha"
   fi
 
-  personal=$(git diff --name-only "$range" -- wiki/ raw/ extracted/ 2>/dev/null || true)
+  # Excepciones que SÍ van al público (allowlist):
+  #   - wiki/**/seed-*.md  → páginas semilla del quickstart (dominio público)
+  #   - wiki/index.md, wiki/log.md → archivos GENERADOS que el template trackea;
+  #     deben actualizarse al cambiar el semilla.
+  # ponytail: la allowlist de index/log filtra títulos+slugs si los regenerás en
+  # main (540 páginas) y pusheás sin querer. Mitigación: regenerar el index del
+  # LADO público (rama desde upstream/main) antes de pushear, así solo lista el
+  # semilla. Si esto duele, mover index/log fuera de wiki/ y dropear la excepción.
+  personal=$(git diff --name-only "$range" -- wiki/ raw/ extracted/ 2>/dev/null \
+    | grep -vE '(^|/)seed-[^/]*\.md$|^wiki/(index|log)\.md$' || true)
   [ -n "$personal" ] && leaked="$leaked$personal"$'\n'
 done
 
