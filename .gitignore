@@ -6,7 +6,9 @@
 # Claude worktrees (heavy, machine-specific)
 .claude/worktrees/
 
-# Comando autopush — contiene remotes/lógica personal, no va al repo público
+# Flujo de sync personal del autor (remotes privados, cherry-pick) — no es
+# onboarding; no se distribuye al template público.
+.claude/WORKFLOW.md
 .claude/commands/autopush.md
 
 # Local Claude settings (contain absolute paths)
