@@ -33,8 +33,18 @@ func=$(git rev-parse HEAD)
 mkdir -p wiki; echo y > wiki/page.md; git add .; git commit -q -m personal
 pers=$(git rev-parse HEAD)
 
+# commit semilla (wiki/**/seed-*.md) — contenido público del template
+mkdir -p wiki/concepts; echo z > wiki/concepts/seed-derivative.md; git add .; git commit -q -m seed
+seed=$(git rev-parse HEAD)
+
+# commit que solo regenera wiki/index.md — archivo generado, allowlisted
+echo idx > wiki/index.md; git add .; git commit -q -m index
+idx=$(git rev-parse HEAD)
+
 stdin_func="refs/heads/main $func refs/heads/main $base"
 stdin_pers="refs/heads/main $pers refs/heads/main $base"
+stdin_seed="refs/heads/main $seed refs/heads/main $pers"
+stdin_idx="refs/heads/main $idx refs/heads/main $seed"
 
 # 1. público + solo funcionalidad → permite (0)
 run 0 "git@github.com:AndresPaladino/atlas.git" "$stdin_func"
@@ -44,5 +54,9 @@ run 1 "git@github.com:AndresPaladino/atlas.git" "$stdin_pers"
 run 0 "git@github.com:AndresPaladino/atlas-personal.git" "$stdin_pers"
 # 4. público sin .git en url + personal → bloquea (1)
 run 1 "git@github.com:AndresPaladino/atlas" "$stdin_pers"
+# 5. público + solo página semilla (seed-*.md) → permite (0)
+run 0 "git@github.com:AndresPaladino/atlas.git" "$stdin_seed"
+# 6. público + solo wiki/index.md regenerado → permite (0)
+run 0 "git@github.com:AndresPaladino/atlas.git" "$stdin_idx"
 
-[ "$fail" = 0 ] && echo "OK — 4/4 casos del guardrail" || { echo "TESTS FALLARON"; exit 1; }
+[ "$fail" = 0 ] && echo "OK — 6/6 casos del guardrail" || { echo "TESTS FALLARON"; exit 1; }
