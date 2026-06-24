@@ -6,6 +6,8 @@
 
 Sistema personal de conocimiento construido sobre [Claude Code](https://claude.ai/code). Mantiene un wiki interconectado que se popula, consulta y practica con sesiones de Claude. Incluye un CLI (`atlas`) para extracción de PDFs y mantenimiento del grafo.
 
+> **Esto es un template, no un producto con datos.** El repo viene casi vacío (solo un wiki semilla de demo): lo clonás, llenás `raw/` con tus PDFs y `wiki/` con tu conocimiento, y se vuelve *tu* Atlas. No hay servidor ni cuenta central; todo vive en tu clon.
+
 ```mermaid
 flowchart LR
     U((vos))
@@ -116,6 +118,16 @@ atlas status          # PDFs pendientes / convertidos / desactualizados
 ```
 
 Ver `tools/README.md` para opciones completas (segmentación, captions con Ollama, etc.).
+
+## Troubleshooting
+
+| Síntoma | Causa / solución |
+|---|---|
+| `atlas: command not found` tras instalar | `uv` instaló el CLI pero su bin-dir no está en el `PATH`. Reabrí la terminal, o agregá `~/.local/bin` al `PATH` (`source ~/.bashrc` / `source ~/.zshenv`). |
+| `atlas extract` lentísimo o sin GPU | Sin CUDA, marker no corre: `atlas extract` cae al fallback `markitdown` (texto plano, sin figuras). Es esperado. `atlas doctor` muestra qué extractor usará. |
+| `atlas extract` se queda sin memoria (OOM) en un PDF grande | marker carga el PDF entero en VRAM. Usá `atlas extract --no-segment` para evitar el chunking extra, o partí el PDF antes. |
+| Una lectura falla dentro de `/practice` ("bloqueado por firewall") | Es a propósito: `/practice` esconde el wiki del tema activo para no spoilear. Usá `/reveal` para ver el contenido bloqueado, o salí del modo. |
+| Los `/`-comandos no hacen nada | `/ingest`, `/query` y `/practice` requieren [Claude Code](https://claude.ai/code) corriendo en la raíz del repo. El CLI `atlas` solo no los provee. |
 
 ## Licencia
 
