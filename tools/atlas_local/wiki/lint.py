@@ -175,8 +175,11 @@ def lint(wiki_dir: Path, scope: str | None = None,
     # ── 5. source-not-ingested (PDFs de raw/ sin página source) ───────────────
     if raw_dir and raw_dir.is_dir():
         ingested = {
-            str(p.frontmatter.get("path", "")).strip()
+            str(p.frontmatter.get(field, "")).strip()
             for p in pages if p.type in ("source", "assessment")
+            # solution_path: el PDF de solución de un examen lo referencia su
+            # propia página (schema/wiki-conventions.md), no una página aparte.
+            for field in ("path", "solution_path")
         }
         for pdf in sorted(raw_dir.rglob("*.pdf")):
             rel = pdf.relative_to(repo_root).as_posix()

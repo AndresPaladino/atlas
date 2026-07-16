@@ -58,3 +58,18 @@ def test_source_not_ingested(wiki, tmp_path):
     (raw / "paper.pdf").write_bytes(b"%PDF-1.4 fake")
     findings = lint(wiki, raw_dir=raw)
     assert any(f.check == "source-not-ingested" for f in findings)
+
+
+def test_solution_path_counts_as_ingested(wiki):
+    # el PDF de solución lo referencia la propia página del examen vía
+    # solution_path:, no una página aparte — no debe reportarse como huérfano
+    raw = wiki.parent / "raw"
+    raw.mkdir()
+    (raw / "e.pdf").write_bytes(b"%PDF-1.4 fake")
+    (raw / "e-sol.pdf").write_bytes(b"%PDF-1.4 fake")
+    write_page(wiki, "assessments", "exam-x",
+               "type: assessment\ntitle: E\nassessment_kind: exam\nareas: [math]\n"
+               "path: raw/e.pdf\nsolution_path: raw/e-sol.pdf\n"
+               "created: 2026-01-01\nupdated: 2026-01-01")
+    findings = lint(wiki, raw_dir=raw)
+    assert not [f for f in findings if f.check == "source-not-ingested"]
