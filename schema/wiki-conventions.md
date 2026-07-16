@@ -54,6 +54,7 @@ Campos extra por tipo:
 - **`example`**: `illustrates: ["[[concept-or-theorem]]"]`, `difficulty: 1|2|3`.
 - **`source`**: `source_kind: lecture|book|paper|notes`, `path: "raw/foo.pdf"`, `pages: "12-34"`, `covers_concepts: [[...]]`, `covers_theorems: [[...]]`, `covers_methods: [[...]]`. Opcional, gestionado por el CLI (no a mano): `ingested_sha256` — hash del raw ya ingerido, lo sella `atlas ingest-stamp` para que `--compile` saltee fuentes sin cambios.
 - **`assessment`**: `assessment_kind: exam|parcial|practica`, `course: "sistop"` (sigla del curso), `path: "raw/.../foo.pdf"`, `evaluates: ["[[concepto]]", ...]` — wikilinks a lo que la evaluación toca (unifica concepts/theorems/methods; el destino ya declara su `type`). Mismo `ingested_sha256` opcional que `source`. **Bidireccional**: cada página en `evaluates:` debe tener este assessment en su `assessed_by:` (ver abajo); el check `assessment-symmetry` de `atlas lint` lo verifica.
+  - `solution_path: "raw/.../foo-solucion.pdf"` y `solution_extracted: "extracted/foo-solucion.md"` — opcionales: dónde vive la solución cuando la cátedra la publica en un PDF aparte de la letra. **Un examen es una sola página**: la solución no es una evaluación distinta. La página lleva los enunciados; la solución nunca entra al wiki (queda en `extracted/`, que el firewall de `/practice` bloquea). No crear páginas `*-sol`.
 - **`comparison`**: `compares: ["[[A]]", "[[B]]"]`.
 - **`area`**: `tag_prefix: "math"` — prefijo de tag que captura sus miembros.
 

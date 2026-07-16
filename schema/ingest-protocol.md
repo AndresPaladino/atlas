@@ -127,8 +127,33 @@ En vez de `wiki/sources/`, crear `wiki/assessments/<slug>.md` con `type: assessm
 
 - Slug: `<curso>-<kind><fecha>`, p.ej. `sistop-exam-dic2024`, `gal2-parcial-may2019`.
 - Frontmatter propio del tipo (ver `wiki-conventions.md`): `assessment_kind`, `course`, `path`, `evaluates` (en lugar de `covers_*`), `extracted`/`ingested_sha256` opcionales.
-- Cuerpo: mismo "Mapa de coverage" pero por problema (`| Problema | Concepto wiki |`).
 - En el Paso 5, cada concepto evaluado se trata por **Caso A-assessment** (abajo): no toca `sources:`, append a `assessed_by:`.
+
+**Cuerpo: transcripción de enunciados, no tabla de coverage.** Una tabla `problema → concepto` no permite resolver el examen: obliga a abrir el PDF, que en `/practice` está bloqueado por el firewall. La página debe ser autosuficiente para *intentar* el examen, sin regalar el camino.
+
+Por cada ejercicio, una sección:
+
+```markdown
+## Ej 3 — Proyección ortogonal en $\mathbb{R}_2[x]$
+
+Sea $\mathbb{R}_2[x]$ con el producto interno $\langle p,q\rangle = 3aa' + 2bb' + cc'$.
+Sean $p_0(x) = 1 + x + x^2$, $q_0 = 1 + x^2$ y $S = [1+x^2]$. Indicar la opción correcta:
+
+- (A) La proyección de $p_0$ sobre $S$ es $q_0$.
+- (B) ... 
+
+> **Evalúa:** [[orthogonal-projection]], [[inner-product-space]]
+> **Clave:** normalizar $q_0$ (su norma es 2) y aplicar $P_S(p_0) = \langle p_0, \hat{q}_0\rangle\,\hat{q}_0$.
+```
+
+Reglas del cuerpo:
+
+- **Enunciado completo y textual**, transcrito del `extracted/`. Incluir las opciones de los múltiple-opción: sin ellas el ejercicio no es el ejercicio.
+- **Corregir artefactos de OCR** al transcribir (`6=` → `\neq`, `<sup>⊥</sup>` → `^\perp`, superíndices rotos, exponentes pegados). El `extracted/` es fiel al PDF, no al LaTeX.
+- **`Clave:` es una línea, no un desarrollo.** Nombra la técnica o el objeto a construir ("plantear la ecuación normal $A^TAx = A^Ty$", "diagonalizar y contar la multiplicidad geométrica"). Si la clave alcanza para escribir la solución, es demasiado larga.
+- **La solución completa nunca entra al wiki**: vive en `extracted/<archivo>.md`, que el firewall bloquea. Cerrar la página con un puntero:
+  > Solución completa: `extracted/2018DicLetraSolucion.md`
+- Los `Evalúa:` por ejercicio son la unión de `evaluates:` del frontmatter. No hace falta además una tabla de coverage — es la misma información dos veces, y driftan.
 
 ## Paso 5 — Para cada concepto del mapa
 
