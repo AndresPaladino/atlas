@@ -18,8 +18,13 @@ from dataclasses import dataclass, field
 from importlib import metadata
 from pathlib import Path
 
-from .config import Tier
+from .config import CAPTION_MODEL, Tier
 from .device import Device
+
+# Backend LLM para --usellm: reusa Ollama (mismo modelo de --captions), sin API
+# key ni dependencia de un servicio pago. marker soporta pasar la instancia de
+# servicio ya configurada en artifact_dict, en vez de solo la ruta de clase.
+_LLM_SERVICE_PATH = "marker.services.ollama.OllamaService"
 
 # Por encima de este nº de páginas, marker procesa el doc por lotes (slices) para
 # acotar el pico de memoria. Un escaneo de cientos de páginas, cargado entero,
@@ -107,10 +112,17 @@ def _png_bytes(image) -> bytes:
 class Extractor:
     """Convierte PDFs según el tier. Carga modelos de marker una sola vez (batch)."""
 
-    def __init__(self, tier: Tier, device: Device, cache_dir: "Path | None" = None):
+    def __init__(
+        self,
+        tier: Tier,
+        device: Device,
+        cache_dir: "Path | None" = None,
+        use_llm: bool = False,
+    ):
         self.tier = tier
         self.device = device
         self.cache_dir = cache_dir
+        self.use_llm = use_llm
         self._converter = None  # marker, perezoso
 
     # ── marker ────────────────────────────────────────────────────────────────
@@ -139,9 +151,24 @@ class Extractor:
             # paginate_output inserta separadores de página ("{N}----…") en el
             # markdown; la segmentación los usa para mapear cada sección a su
             # rango de páginas en el TOC. Es inocuo para el render y el ingest.
+            config = {"pdftext_workers": 1, "paginate_output": True}
+            llm_service = None
+            if self.use_llm:
+                # use_llm mejora tablas/ecuaciones/reading-order pasando cada
+                # bloque dudoso por un LLM. Sin llm_service explícito, marker
+                # usaría Gemini (default_llm_service) y pediría GOOGLE_API_KEY;
+                # acá forzamos Ollama para no depender de una API key paga.
+                # ollama_model va en config: PdfConverter arma el service con
+                # OllamaService(config=config), que asigna sus propios campos
+                # anotados (ollama_model, ollama_base_url) desde ese dict.
+                config["use_llm"] = True
+                config["ollama_model"] = CAPTION_MODEL
+                llm_service = _LLM_SERVICE_PATH
+
             self._converter = PdfConverter(
                 artifact_dict=create_model_dict(),
-                config={"pdftext_workers": 1, "paginate_output": True},
+                config=config,
+                llm_service=llm_service,
             )
         return self._converter
 

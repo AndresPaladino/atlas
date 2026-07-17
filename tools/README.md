@@ -97,6 +97,7 @@ atlas status                   # PDFs pendientes / convertidos / desactualizados
 atlas extract                  # convierte todos los PDFs pendientes de raw/
 atlas extract raw/foo.pdf      # un PDF puntual
 atlas extract --captions       # + describe figuras (necesita Ollama)
+atlas extract --usellm         # + mejora tablas/ecuaciones/reading-order vía LLM (Ollama, mismo modelo que --captions)
 atlas extract --force          # re-extrae todo
 atlas extract --no-segment     # no segmentar aunque el doc sea grande
 ```
