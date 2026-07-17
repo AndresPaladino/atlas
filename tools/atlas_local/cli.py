@@ -253,6 +253,7 @@ def extract(
     paths: list[Path] = typer.Argument(None, help="PDFs específicos; vacío = todos los pendientes de raw/."),
     raw: Optional[Path] = typer.Option(None, "--raw", help="Directorio raw/ (auto-detectado por defecto)."),
     captions: bool = typer.Option(False, "--captions", help="Generar captions de figuras (requiere Ollama)."),
+    usellm: bool = typer.Option(False, "--usellm", help="Mejorar tablas/ecuaciones/reading-order vía LLM (Ollama, requiere Ollama)."),
     force: bool = typer.Option(False, "--force", help="Re-extraer aunque ya esté converted."),
     push: bool = typer.Option(False, "--push", help="Commit y push de los .md y manifest al terminar."),
     segment: Optional[bool] = typer.Option(None, "--segment/--no-segment", help="Forzar/inhibir la segmentación en chunks+TOC (default: auto por umbral de tamaño)."),
@@ -293,6 +294,10 @@ def extract(
     if captions and not do_captions:
         console.print("[yellow]--captions ignorado: el tier no lo soporta o falta Ollama.[/yellow]")
 
+    do_usellm = usellm and tier.captions and ollama_available()
+    if usellm and not do_usellm:
+        console.print("[yellow]--usellm ignorado: el tier no lo soporta o falta Ollama.[/yellow]")
+
     profile = THROTTLE_PROFILES.get(throttle)
     if profile is None:
         console.print(f"[red]--throttle debe ser low, medium o full-throttle.[/red]")
@@ -305,11 +310,12 @@ def extract(
 
     console.print(f"[cyan]Device:[/cyan] {device.label}  ·  [cyan]Tier:[/cyan] {tier.name}  ·  "
                   f"[cyan]Throttle:[/cyan] {profile.name} (batch={effective_batch})  ·  "
-                  f"[cyan]Captions:[/cyan] {'sí' if do_captions else 'no'}")
+                  f"[cyan]Captions:[/cyan] {'sí' if do_captions else 'no'}  ·  "
+                  f"[cyan]LLM:[/cyan] {'sí' if do_usellm else 'no'}")
     console.print(f"[cyan]Caché modelos:[/cyan] {cache_dir}")
     console.print(f"[cyan]A extraer:[/cyan] {len(targets)} PDF(s)\n")
 
-    extractor = Extractor(tier, device, cache_dir=cache_dir)
+    extractor = Extractor(tier, device, cache_dir=cache_dir, use_llm=do_usellm)
     ok = 0
     extracted = []
     for pdf in targets:
