@@ -703,7 +703,7 @@ def session_set(
 
 @session_app.command("mode")
 def session_mode(
-    mode: str = typer.Argument(..., help="query | practice | ingest | lint"),
+    mode: str = typer.Argument(..., help="query | learn | practice | ingest | lint"),
     wiki: Optional[Path] = typer.Option(None, "--wiki"),
 ) -> None:
     """Cambia el modo. Cualquier modo ≠ practice levanta el firewall."""

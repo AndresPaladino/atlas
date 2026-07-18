@@ -4,13 +4,13 @@ Atlas es un sistema personal de conocimiento e interacción con él. Este archiv
 
 ## Al iniciar una sesión
 
-Leé `schema/modes.md` — los 4 modos, default heurístico, firewall.
+Leé `schema/modes.md` — los 5 modos, default heurístico, firewall.
 
 No leas más cosas hasta saber qué modo activar.
 
 ## Modos
 
-Cuatro modos: `/ingest`, `/query`, `/practice`, `/lint`. La tabla completa (comando → protocolo → propósito) y la heurística default viven en `schema/modes.md` — single source of truth.
+Cinco modos: `/ingest`, `/query`, `/learn`, `/practice`, `/lint`. La tabla completa (comando → protocolo → propósito) y la heurística default viven en `schema/modes.md` — single source of truth.
 
 Si no hay slash command, aplicá la heurística default de `schema/modes.md` (cierra hacia `/practice` ante ambigüedad).
 

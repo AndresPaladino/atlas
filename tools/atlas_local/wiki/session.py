@@ -21,7 +21,7 @@ SESSION_REL = ".atlas/session.json"
 
 @dataclass
 class Session:
-    mode: str = "query"               # query | practice | ingest | lint
+    mode: str = "query"               # query | learn | practice | ingest | lint
     topic: str | None = None          # T, solo en practice
     blocked_slugs: list[str] = field(default_factory=list)
     reveal: bool = False              # válvula de escape one-shot
