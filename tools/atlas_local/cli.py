@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+import shutil
 from pathlib import Path
 from typing import Optional
 
@@ -326,7 +327,18 @@ def extract(
             def _on_batch(start: int, end: int, total: int) -> None:
                 console.print(f"\n  [dim]lote p{start}-p{end}/{total} …[/dim]", end=" ")
 
-            result = extractor.extract(pdf, batch_pages=effective_batch, on_progress=_on_batch)
+            # Checkpoint de lotes: cada lote se persiste en <stem>.partial/ apenas
+            # se procesa, así una corrida cortada reanuda desde el primer lote
+            # faltante en vez de re-extraer el PDF entero. Se limpia al terminar.
+            pdf_rel = pdf.relative_to(raw_dir)
+            partial_dir = artifacts_dir / pdf_rel.parent / f"{pdf.stem}.partial"
+            if partial_dir.is_dir() and any(partial_dir.glob("p*.md")):
+                console.print(f"\n  [dim]reanudando desde checkpoint en {partial_dir.name}/…[/dim]", end=" ")
+
+            result = extractor.extract(
+                pdf, batch_pages=effective_batch, on_progress=_on_batch,
+                partial_dir=partial_dir,
+            )
 
             if do_captions and result.images:
                 from .caption import caption_images, inline_captions
@@ -335,7 +347,6 @@ def extract(
                 result.markdown = inline_captions(result.markdown, caps)
 
             # El .md monolítico y sus artefactos van a extracted/, no a raw/.
-            pdf_rel = pdf.relative_to(raw_dir)
             md_path = artifacts_dir / pdf_rel.with_suffix(".md")
             md_path.parent.mkdir(parents=True, exist_ok=True)
             header = (
@@ -379,6 +390,10 @@ def extract(
                 chunks_dir=seg.chunks_dir if seg else None,
                 n_chunks=seg.n_chunks if seg else 0,
             )
+            # PDF completo y sellado en el manifest: el checkpoint ya no sirve.
+            if partial_dir.is_dir():
+                shutil.rmtree(partial_dir, ignore_errors=True)
+
             ok += 1
             extracted.append(pdf)
             seg_note = f" · {seg.n_chunks} chunks" if seg else ""
